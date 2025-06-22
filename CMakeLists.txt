@@ -20,7 +20,7 @@ cmake_minimum_required(VERSION 3.13)
 if(ESP_PLATFORM)
 set(DEBUG_APDU 1)
 set(DENABLE_POWER_ON_RESET 0)
-set(EXTRA_COMPONENT_DIRS pico-fido/src pico-keys-sdk/src pico-openpgp/src)
+set(EXTRA_COMPONENT_DIRS src/fido2 pico-keys-sdk/src)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 else()
 
@@ -77,7 +77,7 @@ else()
     set(USB_ITF_CCID 0)
 endif()
 
-set(SOURCES ${SOURCES}
+set(SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/fido2/files.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/fido.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/kek.c
