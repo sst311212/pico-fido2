@@ -43,6 +43,10 @@ endif()
 add_executable(pico_fido2)
 endif()
 
+if(DISABLE_BTNPRESS)
+    add_definitions(-DDISABLE_BTNPRESS)
+endif()
+
 option(ENABLE_POWER_ON_RESET "Enable/disable power cycle on reset" ON)
 if(ENABLE_POWER_ON_RESET)
     add_definitions(-DENABLE_POWER_ON_RESET=1)
