@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Simple Pico Commissioner</title>
+</head>
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="container" style="width:500px">
+        <div class="row mt-3">
+            <label class="col-form-label col-4">Vendor</label>
+            <div class="col">
+                <select class="form-select" id="phy_usb_vendor">
+                    <option value="" selected>Select a Vendor</option>
+                    <option value="20A0:4230">NitroHSM</option>
+                    <option value="20A0:42B1">NitroFIDO2</option>
+                    <option value="20A0:4211">NitroStart</option>
+                    <option value="20A0:4108">NitroPro</option>
+                    <option value="20A0:42B2">Nitro3</option>
+                    <option value="1050:0407">Yubikey5</option>
+                    <option value="1050:0116">YubikeyNeo</option>
+                    <option value="1050:0030">YubiHSM</option>
+                    <option value="234B:0000">Gnuk</option>
+                    <option value="1209:2440">GnuPG</option>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4" for="phy_usb_vidpid">VID & PID</label>
+            <div class="col">
+                <input class="form-control" type="text" id="phy_usb_vidpid" placeholder="1050:0407">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4" for="phy_usb_product">Product Name</label>
+            <div class="col">
+                <input class="form-control" type="text" id="phy_usb_product" maxlength="31" placeholder="Yubico Yubikey">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4" for="phy_btn_timeout">Button Timeout</label>
+            <div class="col align-self-center">
+                <input class="form-range" type="range" id="phy_btn_timeout" max="60" value="15">
+            </div>
+            <label class="col-form-label col-1" id="phy_btn_timeout_val">15</label>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4" for="phy_led_gpio">LED GPIO Pin</label>
+            <div class="col-3">
+                <input class="form-control" type="number" id="phy_led_gpio" max="28">
+            </div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4" for="phy_led_btness">LED Brightness</label>
+            <div class="col align-self-center">
+                <input class="form-range" type="range" id="phy_led_btness" max="15" value="3">
+            </div>
+            <label class="col-form-label col-1" id="phy_led_btness_val">3</label>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4">LED Options</label>
+            <div class="col">
+                <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_dimmable" checked>
+                <label class="btn btn-outline-primary" for="phy_opts_dimmable">Dimmable</label>
+                
+                <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_steady">
+                <label class="btn btn-outline-primary" for="phy_opts_steady">Steady</label>
+                
+                <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_rainbow">
+                <label class="btn btn-outline-primary" for="phy_opts_rainbow">Rainbow</label>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4">Enable Curve</label>
+            <div class="col">
+                <input class="btn-check" type="checkbox" name="phy_options" id="phy_curve_secp256k1">
+                <label class="btn btn-outline-warning" for="phy_curve_secp256k1">secp256k1</label>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-form-label col-4">LED Driver</label>
+            <div class="col">
+                <select class="form-select" id="phy_led_driver">
+                    <option value="" selected>Select a LED Driver</option>
+                    <option value="1">Pico</option>
+                    <option value="2">Pimoroni</option>
+                    <option value="3">WS2812</option>
+                    <option value="4">CYW43</option>
+                    <option value="5">NeoPixel</option>
+                    <option value="131">WS2812_Swap (Unofficial)</option>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col pe-2">
+                <input class="btn btn-success w-100" type="button" value="Commission" onclick="onCreateCredentailClick(this)" alt="apply">
+            </div>
+            <div class="col-3 ps-2">
+                <input class="btn btn-danger w-100" type="button" value="Reset" onclick="onCreateCredentailClick(this)" alt="reset">
+            </div>
+        </div>
+    </div>
+    <div class="fixed-bottom ms-2">
+        <footer class="blockquote-footer"><cite>Why not just buy a genuine Yubikey at this situation?</cite></footer>
+    </div>
+    <script>
+        const PHY_VIDPID                    = 0x0;
+        const PHY_LED_GPIO                  = 0x4;
+        const PHY_LED_BTNESS                = 0x5;
+        const PHY_OPTS                      = 0x6;
+        const PHY_UP_BTN                    = 0x8;
+        const PHY_USB_PRODUCT               = 0x9;
+        const PHY_ENABLED_CURVES            = 0xA;
+        const PHY_ENABLED_USB_ITF           = 0xB;
+        const PHY_LED_DRIVER                = 0xC;
+
+        const PHY_OPT_WCID                  = 0x1;
+        const PHY_OPT_DIMM                  = 0x2;
+        const PHY_OPT_DISABLE_POWER_RESET   = 0x4;
+        const PHY_OPT_LED_STEADY            = 0x8;
+        const PHY_OPT_LED_RAINBOW           = 0x10;
+
+        const PHY_CURVE_SECP256K1           = 0x8;
+
+        const credChallenge = new Uint8Array(32);
+        const pkeyCredCreateOptions = {
+            attestation: "direct",
+            authenticatorSelection: {
+                authenticatorAttachment: "cross-platform"
+            },
+            challenge: credChallenge,
+            hints: [ "security-key" ],
+            pubKeyCredParams: [
+                { alg: -257, type: "public-key" },
+                { alg: -7, type: "public-key" }
+            ],
+            rp: { name: "阿皇仔" },
+            user: {
+                id: undefined,
+                name: "+picoCommissionProfile",
+                displayName: "阿皇仔"
+            }
+        };
+
+        let elm_usb_vendor = document.querySelector("#phy_usb_vendor");
+        let elm_usb_vidpid = document.querySelector("#phy_usb_vidpid");
+        let elm_usb_product = document.querySelector("#phy_usb_product");
+        let elm_btn_timeout = document.querySelector("#phy_btn_timeout");
+        let elm_led_gpio = document.querySelector("#phy_led_gpio");
+        let elm_led_btness = document.querySelector("#phy_led_btness");
+        let elm_opts_dimmable = document.querySelector("#phy_opts_dimmable");
+        let elm_opts_steady = document.querySelector("#phy_opts_steady");
+        let elm_opts_rainbow = document.querySelector("#phy_opts_rainbow");
+        let elm_curve_secp256k1 = document.querySelector("#phy_curve_secp256k1");
+        let elm_led_driver = document.querySelector("#phy_led_driver");
+
+        function GetPhyData()
+        {
+            var p = 0;
+            var phy_data = new Uint8Array(1024);
+
+            var val_usb_vidpid = String(elm_usb_vidpid.value);
+            if (val_usb_vidpid) {
+                if (val_usb_vidpid.includes(':')) {
+                    val_usb_vidpid = val_usb_vidpid.replace(':', '');
+                }
+                phy_data[p++] = PHY_VIDPID;
+                phy_data[p++] = 4;
+                for (i = 0; i < val_usb_vidpid.length; i += 2) {
+                    phy_data[p++] = parseInt(val_usb_vidpid.substr(i, 2), 16);
+                }
+            }
+
+            var val_led_gpio = parseInt(elm_led_gpio.value);
+            if (val_led_gpio >= 0 && val_led_gpio <= 28) {
+                phy_data[p++] = PHY_LED_GPIO;
+                phy_data[p++] = 1;
+                phy_data[p++] = val_led_gpio;
+            }
+
+            var val_led_btness = parseInt(elm_led_btness.value);
+            if (val_led_btness >= 0 && val_led_btness <= 15) {
+                phy_data[p++] = PHY_LED_BTNESS;
+                phy_data[p++] = 1;
+                phy_data[p++] = val_led_btness;
+            }
+
+            phy_data[p++] = PHY_OPTS;
+            phy_data[p++] = 2;
+            if (Boolean(elm_opts_dimmable.checked)) {
+                phy_data[p + 1] |= PHY_OPT_DIMM;
+            }
+            if (Boolean(elm_opts_steady.checked)) {
+                phy_data[p + 1] |= PHY_OPT_LED_STEADY;
+            }
+            if (Boolean(elm_opts_rainbow.checked)) {
+                phy_data[p + 1] |= PHY_OPT_LED_RAINBOW;
+            }
+            p += 2;
+
+            var val_btn_timeout = parseInt(elm_btn_timeout.value);
+            if (val_btn_timeout >= 0 && val_btn_timeout <= 60) {
+                phy_data[p++] = PHY_UP_BTN;
+                phy_data[p++] = 1;
+                phy_data[p++] = val_btn_timeout;
+            }
+
+            var val_usb_product = String(elm_usb_product.value);
+            if (val_usb_product) {
+                phy_data[p++] = PHY_USB_PRODUCT;
+                phy_data[p++] = val_usb_product.length + 1;
+                for (i = 0; i < val_usb_product.length; i++) {
+                    phy_data[p++] = val_usb_product.charCodeAt(i);
+                }
+                phy_data[p++] = 0;
+            }
+
+            phy_data[p++] = PHY_ENABLED_CURVES;
+            phy_data[p++] = 4;
+            if (Boolean(elm_curve_secp256k1.checked)) {
+                phy_data[p + 3] |= PHY_CURVE_SECP256K1;
+            }
+            p += 4;
+
+            var val_led_driver = parseInt(elm_led_driver.value);
+            if (val_led_driver) {
+                phy_data[p++] = PHY_LED_DRIVER;
+                phy_data[p++] = 1;
+                phy_data[p++] = val_led_driver;
+            }
+
+            phy_data = phy_data.slice(0, p);
+            console.log(phy_data);
+            return phy_data;
+        }
+
+        function onCreateCredentailClick(event)
+        {
+            window.crypto.getRandomValues(credChallenge);
+            switch (event.alt) {
+                case "apply":
+                    pkeyCredCreateOptions.user.id = GetPhyData();
+                    pkeyCredCreateOptions.user.name = "+picoCommissionProfile";
+                    break;
+                case "reset":
+                    pkeyCredCreateOptions.user.id = new Uint8Array(16);
+                    pkeyCredCreateOptions.user.name = "+picoResetProfile";
+                    break;
+                default:
+                    break;
+            }
+            navigator.credentials.create({ publicKey: pkeyCredCreateOptions });
+        }
+
+        function slideIndicator(event) {
+            var indicator = document.querySelector(`#${event.target.id}_val`);
+            if (indicator) {
+                indicator.textContent = event.target.value;
+            }
+        }
+
+        phy_usb_vendor.addEventListener("change", (event) => {
+            var data = event.target.value;
+            elm_usb_vidpid.value = data;
+            if (data) {
+                elm_usb_vidpid.disabled = true;
+            } else {
+                elm_usb_vidpid.disabled = false;
+            }
+        });
+
+        elm_btn_timeout.addEventListener("input", slideIndicator);
+        elm_led_btness.addEventListener("input", slideIndicator);
+
+        setTimeout(() => {
+            elm_usb_vendor.dispatchEvent(new Event("change"));
+            elm_btn_timeout.dispatchEvent(new Event("input"));
+            elm_led_btness.dispatchEvent(new Event("input"));
+        }, 50);
+    </script>
+</body>
+</html>
