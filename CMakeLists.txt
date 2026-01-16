@@ -1,69 +1,91 @@
- #
- # This file is part of the Pico FIDO2 distribution (https://github.com/polhenarejos/pico-fido2).
- # Copyright (c) 2025 Pol Henarejos.
- #
- # This program is free software: you can redistribute it and/or modify
- # it under the terms of the GNU General Public License as published by
- # the Free Software Foundation, version 3.
- #
- # This program is distributed in the hope that it will be useful, but
- # WITHOUT ANY WARRANTY; without even the implied warranty of
- # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- # General Public License for more details.
- #
- # You should have received a copy of the GNU General Public License
- # along with this program. If not, see <http://www.gnu.org/licenses/>.
- #
+#
+# This file is part of the Pico FIDO2 distribution (https://github.com/polhenarejos/pico-fido2).
+# Copyright (c) 2025 Pol Henarejos.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+#
 
 cmake_minimum_required(VERSION 3.13)
 
+set(USB_VID 0x2E8A)
+set(USB_PID 0x10FE)
+
 if(ESP_PLATFORM)
-set(DEBUG_APDU 1)
-set(DENABLE_POWER_ON_RESET 0)
-set(EXTRA_COMPONENT_DIRS src/fido2 pico-keys-sdk/src)
-include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+    if(NOT DEFINED ENABLE_POWER_ON_RESET)
+        set(ENABLE_POWER_ON_RESET 0)
+    endif()
+    if(NOT DEFINED ENABLE_PQC)
+        set(ENABLE_PQC 0)
+    endif()
+    set(EXTRA_COMPONENT_DIRS
+        src/fido2
+        pico-keys-sdk/config/esp32/components/pico-keys-sdk
+        pico-keys-sdk/config/esp32/components/tinycbor
+    )
+    if(ENABLE_PQC)
+        list(APPEND EXTRA_COMPONENT_DIRS
+            pico-keys-sdk/config/esp32/components/mlkem512
+            pico-keys-sdk/config/esp32/components/mlkem768
+            pico-keys-sdk/config/esp32/components/mlkem1024
+        )
+    endif()
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 else()
+    if(NOT ENABLE_EMULATION)
+        set(PICO_USE_FASTEST_SUPPORTED_CLOCK 1)
+        include(pico_sdk_import.cmake)
+    endif()
 
-if(ENABLE_EMULATION)
-else()
-set(PICO_USE_FASTEST_SUPPORTED_CLOCK 1)
-include(pico_sdk_import.cmake)
+    project(pico_fido2 C CXX ASM)
+
+    set(CMAKE_C_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 17)
+
+    if(NOT DEFINED __FOR_CI)
+        set(__FOR_CI 0)
+    endif()
+    if(__FOR_CI)
+        add_definitions(-D__FOR_CI)
+    endif()
+
+    add_executable(pico_fido2)
 endif()
 
-project(pico_fido2 C CXX ASM)
-
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
-
-add_executable(pico_fido2)
-endif()
+include(pico-keys-sdk/cmake/options.cmake)
 
 option(ENABLE_POWER_ON_RESET "Enable/disable power cycle on reset" ON)
-if(ENABLE_POWER_ON_RESET)
-    add_definitions(-DENABLE_POWER_ON_RESET=1)
-    message(STATUS "Power cycle on reset: \t enabled")
-else()
-    add_definitions(-DENABLE_POWER_ON_RESET=0)
-    message(STATUS "Power cycle on reset: \t disabled")
-endif(ENABLE_POWER_ON_RESET)
+configure_bool_option(
+    ENABLE_POWER_ON_RESET
+    ENABLE_POWER_ON_RESET
+    "Power cycle on reset: \t enabled"
+    "Power cycle on reset: \t disabled"
+)
 
 option(ENABLE_OATH_APP "Enable/disable OATH application" ON)
-if(ENABLE_OATH_APP)
-    add_definitions(-DENABLE_OATH_APP=1)
-    message(STATUS "OATH Application: \t\t enabled")
-else()
-    add_definitions(-DENABLE_OATH_APP=0)
-    message(STATUS "OATH Application: \t\t disabled")
-endif(ENABLE_OATH_APP)
+configure_bool_option(
+    ENABLE_OATH_APP
+    ENABLE_OATH_APP
+    "OATH Application: \t\t enabled"
+    "OATH Application: \t\t disabled"
+)
 
 option(ENABLE_OTP_APP "Enable/disable OTP application" ON)
-if(ENABLE_OTP_APP)
-    add_definitions(-DENABLE_OTP_APP=1)
-    message(STATUS "OTP Application: \t\t enabled")
-else()
-    add_definitions(-DENABLE_OTP_APP=0)
-    message(STATUS "OTP Application: \t\t disabled")
-endif(ENABLE_OTP_APP)
+configure_bool_option(
+    ENABLE_OTP_APP
+    ENABLE_OTP_APP
+    "OTP Application: \t\t enabled"
+    "OTP Application: \t\t disabled"
+)
 
 if(ENABLE_OTP_APP OR ENABLE_OATH_APP)
     set(USB_ITF_CCID 1)
@@ -79,10 +101,9 @@ if(NOT ESP_PLATFORM)
     set(SOURCES ${PICO_KEYS_SOURCES})
 endif()
 
-set(SOURCES ${SOURCES}
+list(APPEND SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/src/fido2/files.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/fido.c
-        ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/kek.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/cmd_register.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/cmd_authenticate.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/cmd_version.c
@@ -120,67 +141,115 @@ set(SOURCES ${SOURCES}
         ${CMAKE_CURRENT_LIST_DIR}/pico-openpgp/src/openpgp/cmd_keypair_gen.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-openpgp/src/openpgp/cmd_reset_retry.c
         ${CMAKE_CURRENT_LIST_DIR}/pico-openpgp/src/openpgp/do.c
-        )
-if (${ENABLE_OATH_APP})
-set(SOURCES ${SOURCES}
+)
+
+if(ENABLE_OATH_APP)
+    list(APPEND SOURCES
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/oath.c
-        )
-endif()
-if (${ENABLE_OTP_APP})
-set(SOURCES ${SOURCES}
-        ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/otp.c
-        )
+    )
 endif()
 
-SET_VERSION(ver_major ver_minor "${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/version.h" 1)
+if(ENABLE_OTP_APP)
+    list(APPEND SOURCES
+        ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/otp.c
+    )
+endif()
+
+SET_VERSION(ver_major ver_minor "${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido/version.h")
 if(ESP_PLATFORM)
     project(pico_fido2)
 endif()
+
 set(INCLUDES ${INCLUDES}
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src/fido
         ${CMAKE_CURRENT_LIST_DIR}/pico-fido/src
         ${CMAKE_CURRENT_LIST_DIR}/pico-openpgp/src/openpgp
         ${CMAKE_CURRENT_LIST_DIR}/pico-openpgp/src
-        )
+)
+
 if(NOT ESP_PLATFORM)
-target_sources(pico_fido2 PUBLIC ${SOURCES})
-target_include_directories(pico_fido2 PUBLIC ${INCLUDES})
+    target_sources(pico_fido2 PUBLIC ${SOURCES})
+    target_include_directories(pico_fido2 PUBLIC ${INCLUDES})
 
-target_compile_options(pico_fido2 PUBLIC
-    -Wall
+    if(PICO_RP2350)
+        if(NOT IS_CYW43)
+            pico_set_binary_type(${CMAKE_PROJECT_NAME} default)
+        endif()
+    endif()
+
+    set(COMMON_COMPILE_OPTIONS
+        -Wall
     )
-if (NOT MSVC)
-target_compile_options(pico_fido2 PUBLIC
-    -Werror
+    target_compile_options(pico_fido2 PRIVATE ${COMMON_COMPILE_OPTIONS})
+
+    pico_keys_apply_strict_flags(
+        SOURCES ${SOURCES}
+        FILTER_REGEX "/src/fido2/|/pico-keys-sdk/src/|/pico-keys-sdk/config/"
     )
 
-string(FIND ${CMAKE_C_COMPILER} ":" COMPILER_COLON)
-if (${COMPILER_COLON} GREATER_EQUAL 0)
-        target_compile_options(pico_fido2 PUBLIC
-        -Wno-error=use-after-free
-        )
-endif()
-endif(NOT MSVC)
-
-if(ENABLE_EMULATION)
     if(NOT MSVC)
-    target_compile_options(pico_fido2 PUBLIC
-            -fdata-sections
-            -ffunction-sections
+        string(FIND ${CMAKE_C_COMPILER} ":" COMPILER_COLON)
+        if(${COMPILER_COLON} GREATER_EQUAL 0)
+            target_compile_options(pico_fido2 PRIVATE
+                -Wno-error=use-after-free
             )
-    endif(NOT MSVC)
-    if(APPLE)
-    target_link_options(pico_fido2 PUBLIC
-            -Wl,-dead_strip
+        endif()
+    endif()
+
+    if(ENABLE_EMULATION)
+        if(NOT MSVC)
+            set(EMULATION_NON_MSVC_COMPILE_OPTIONS
+                -fdata-sections
+                -ffunction-sections
             )
+            target_compile_options(pico_fido2 PRIVATE ${EMULATION_NON_MSVC_COMPILE_OPTIONS})
+        endif()
+
+        if(APPLE)
+            set(EMULATION_APPLE_LINK_OPTIONS
+                -Wl,-dead_strip
+            )
+            target_link_options(pico_fido2 PRIVATE ${EMULATION_APPLE_LINK_OPTIONS})
+
+            if(DEBUG_APDU)
+                set(DEBUG_APDU_SANITIZER_OPTIONS
+                    -fsanitize=address
+                    -g
+                    -O1
+                    -fno-omit-frame-pointer
+                )
+                target_compile_options(pico_fido2 PRIVATE ${DEBUG_APDU_SANITIZER_OPTIONS})
+                target_link_options(pico_fido2 PRIVATE ${DEBUG_APDU_SANITIZER_OPTIONS})
+            endif()
+        elseif(MSVC)
+            target_compile_options(pico_fido2 PUBLIC
+                -WX
+            )
+
+            target_link_libraries(pico_fido2 PUBLIC wsock32 ws2_32 Bcrypt)
+        else()
+            set(EMULATION_NON_APPLE_LINK_OPTIONS
+                -Wl,--gc-sections
+            )
+            target_link_options(pico_fido2 PRIVATE ${EMULATION_NON_APPLE_LINK_OPTIONS})
+        endif()
+
+        target_link_libraries(pico_fido2 PRIVATE pico_keys_sdk mbedtls pthread m)
     else()
-    target_link_options(pico_fido2 PUBLIC
-            -Wl,--gc-sections
-            )
-    endif (APPLE)
-    target_link_libraries(pico_fido2 PRIVATE pthread m)
-else()
-target_link_libraries(pico_fido2 PRIVATE pico_keys_sdk pico_stdlib pico_multicore hardware_flash hardware_sync hardware_adc pico_unique_id pico_aon_timer tinyusb_device tinyusb_board)
-pico_add_extra_outputs(${CMAKE_PROJECT_NAME})
-endif()
+        target_link_libraries(
+            pico_fido2
+            PRIVATE
+                pico_keys_sdk
+                pico_stdlib
+                pico_multicore
+                hardware_flash
+                hardware_sync
+                hardware_adc
+                pico_unique_id
+                pico_aon_timer
+                tinyusb_device
+                tinyusb_board
+        )
+        pico_add_extra_outputs(${CMAKE_PROJECT_NAME})
+    endif()
 endif()
