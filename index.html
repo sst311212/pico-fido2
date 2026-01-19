@@ -4,6 +4,7 @@
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Pico Commissioner</title>
 
         <!-- Popovers -->
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
@@ -12,52 +13,66 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
-        <title>Pico Commissioner</title>
+        <!-- Custom Style -->
+        <style>
+            label {
+                user-select: none;
+            }
+            .cst-popover {
+                --bs-popover-border-color: var(--bs-pink);
+                --bs-popover-body-padding-x: 1rem;
+                --bs-popover-body-padding-y: .5rem;
+            }
+        </style>
     </head>
-    <body style="width: 500px;">
-        <nav class="nav nav-tabs" role="tablist">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#nav-webusb" role="tab">WebUSB</button>
-            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
-        </nav>
-        <div class="tab-content mt-2">
-            <div class="tab-pane fade show active" id="nav-webusb" role="tabpanel">
-                <div class="container">
-                    <div class="row row-cols-auto mt-2">
+    <body>
+        <div class="container" style="width: 500px;">
+            <nav class="nav nav-tabs row-cols-2 mt-1" role="tablist">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#nav-webusb" role="tab">WebUSB</button>
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
+            </nav>
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="nav-webusb" role="tabpanel">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="pico_platform" style="width: 100px;">Platform:</label>
                         <div class="flex-fill">
                             <input class="form-control" type="text" id="pico_platform" disabled>
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="pico_product" style="width: 100px;">Product:</label>
                         <div class="flex-fill">
                             <input class="form-control" type="text" id="pico_product" disabled>
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="pico_version" style="width: 100px;">Version:</label>
                         <div class="flex-fill">
                             <input class="form-control" type="text" id="pico_version" disabled>
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="pico_serial" style="width: 100px;">Serial:</label>
                         <div class="flex-fill">
                             <input class="form-control" type="text" id="pico_serial" disabled>
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-3">
-                        <button class="btn btn-primary ms-auto me-3" style="width: 120px;" onclick="requestDevice(this)">Connect</button>
-                        <button class="btn btn-danger me-auto" style="width: 120px;" onclick="forgetDevices(this)">Disconnect</button>
+                    <div class="row row-cols-auto mx-0 mt-3">
+                        <button class="btn btn-primary ms-auto me-3" id="web_usb_connect" style="width: 120px;" onclick="requestDevice(this)">Connect</button>
+                        <button class="btn btn-danger me-auto" id="web_usb_disconnect" style="width: 120px;" onclick="forgetDevices(this)">Disconnect</button>
+                    </div>
+                    <div class="d-flex justify-content-center">
+                        <label class="alert alert-warning mt-3" id="web_usb_alert" role="alert" hidden>
+                            WebUSB is not supported on this browser
+                        </label>
                     </div>
                 </div>
-            </div>
-            <div class="tab-pane fade" id="nav-phy" role="tabpanel">
-                <div class="container">
-                    <div class="row row-cols-auto mt-2">
+                <div class="tab-pane fade" id="nav-phy" role="tabpanel">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="phy_usb_vendor" style="width: 150px;">Vendor:</label>
                         <div class="flex-fill">
-                            <select class="form-select" id="phy_usb_vendor" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Yubico vendor will not able to use WebUSB">
+                            <select class="form-select" id="phy_usb_vendor"
+                                data-bs-toggle="popover" data-bs-content="Yubico vendor will not able to use WebUSB">
                                 <option value="" selected>Select a Vendor</option>
                                 <option value="20A0:4230">NitroHSM</option>
                                 <option value="20A0:42B1">NitroFIDO2</option>
@@ -72,63 +87,74 @@
                             </select>
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="phy_usb_vidpid" style="width: 150px;">VID & PID:</label>
                         <div class="flex-fill">
                             <input class="form-control" type="text" id="phy_usb_vidpid" placeholder="1050:0407">
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="phy_usb_product" style="width: 150px;">Product Name:</label>
                         <div class="flex-fill">
                             <input class="form-control" type="text" id="phy_usb_product" maxlength="31" placeholder="Yubico Yubikey">
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="phy_btn_timeout" style="width: 150px;">Button Timeout:</label>
-                        <div class="align-self-center flex-fill">
-                            <input class="form-range" type="range" id="phy_btn_timeout" max="60" value="15">
+                        <div class="row flex-fill">
+                            <div>
+                                <input class="form-range" type="range" id="phy_btn_timeout" min="0" max="60" value="15"
+                                    data-bs-toggle="popover" data-bs-content="0 - Disable Button Presence">
+                            </div>
+                            <div class="d-inline-flex justify-content-center">
+                                <label class="col-form-label py-0" id="phy_btn_timeout_val">15</label>
+                            </div>
                         </div>
-                        <label class="col-form-label" id="phy_btn_timeout_val">15</label>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="phy_led_gpio" style="width: 150px;">LED GPIO Pin:</label>
-                        <div class="flex-fill">
-                            <input class="form-control" type="number" id="phy_led_gpio" max="28">
+                        <div>
+                            <input class="form-control" type="number" id="phy_led_gpio" min="0" max="28">
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" for="phy_led_btness" style="width: 150px;">LED Brightness:</label>
-                        <div class="align-self-center flex-fill">
-                            <input class="form-range" type="range" id="phy_led_btness" max="15" value="3">
+                        <div class="row flex-fill">
+                            <div>
+                                <input class="form-range" type="range" id="phy_led_btness" min="0" max="15" value="3">
+                            </div>
+                            <div class="d-inline-flex justify-content-center">
+                                <label class="col-form-label py-0" id="phy_led_btness_val">3</label>
+                            </div>
                         </div>
-                        <label class="col-form-label" id="phy_led_btness_val">3</label>
                     </div>
-                    <div class="row row-cols-2 mt-2">
+                    <div class="row row-cols-2 mx-0 mt-2">
                         <label class="col-form-label text-end" style="width: 150px;">LED Options:</label>
-                            <div class="row row-cols-2">
-                                <div>
-                                    <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_dimmable" checked>
-                                    <label class="btn btn-outline-primary" for="phy_opts_dimmable">Dimmable</label>
-                                </div>
-                                <div>
-                                    <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_steady">
-                                    <label class="btn btn-outline-primary" for="phy_opts_steady">Steady</label>
-                                </div>
-                                <div class="text-nowrap mt-2">
-                                    <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_rainbow">
-                                    <label class="btn btn-outline-primary" for="phy_opts_rainbow" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Only available with my firmware">Rainbow (Unofficial)</label>
-                                </div>
+                        <div class="row row-cols-auto flex-fill">
+                            <div class="pe-0">
+                                <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_dimmable" checked>
+                                <label class="btn btn-outline-primary" for="phy_opts_dimmable" style="width: 108px;">Dimmable</label>
+                            </div>
+                            <div class="pe-0">
+                                <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_steady">
+                                <label class="btn btn-outline-primary" for="phy_opts_steady" style="width: 108px;">Steady</label>
+                            </div>
+                            <div class="col-12 pe-0 mt-2">
+                                <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_rainbow">
+                                <label class="btn btn-outline-primary" for="phy_opts_rainbow" style="width: 108px;"
+                                    data-bs-toggle="popover" data-bs-content="Only available with my firmware">Rainbow</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" style="width: 150px;">Enable Curve:</label>
                         <div>
                             <input class="btn-check" type="checkbox" name="phy_options" id="phy_curve_secp256k1">
-                            <label class="btn btn-outline-warning" for="phy_curve_secp256k1" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Not compatible with Android device">secp256k1</label>
+                            <label class="btn btn-outline-warning" for="phy_curve_secp256k1" style="width: 108px;"
+                                data-bs-toggle="popover" data-bs-content="Not compatible with Android device">secp256k1</label>
                         </div>
                     </div>
-                    <div class="row row-cols-auto mt-2">
+                    <div class="row row-cols-auto mx-0 mt-2">
                         <label class="col-form-label text-end" style="width: 150px;">LED Driver:</label>
                         <div class="flex-fill">
                             <select class="form-select" id="phy_led_driver">
@@ -142,22 +168,36 @@
                             </select>
                         </div>
                     </div>
-                    <div class="row row-cols-2 mt-3">
+                    <div class="row row-cols-2 mx-0 mt-3">
                         <div>
-                            <button class="btn btn-success w-100" value="apply" onclick="onCommissionClick(this)">Commission</button>
+                            <button class="btn btn-success w-100" id="web_phy_apply" value="apply" onclick="onCommissionClick(this)">Commission</button>
                         </div>
                         <div>
-                            <button class="btn btn-danger w-100" value="reset" onclick="onCommissionClick(this)" data-bs-toggle="popover" data-bs-trigger="hover" data-bs-content="Only available with my firmware">Reset (Unofficial)</button>
+                            <button class="btn btn-danger w-100" id="web_phy_reset" value="reset" onclick="onCommissionClick(this)"
+                                data-bs-toggle="popover" data-bs-content="Only available with my firmware">Reset Settings</button>
                         </div>
                     </div>
-                    <div class="row row-cols-2 mt-3">
+                    <div class="row row-cols-2 mx-0 mt-3" id="web_phy_reboot_g">
                         <div>
-                            <button class="btn btn-secondary w-100" value="reboot" onclick="onCommissionClick(this)">Reboot</button>
+                            <button class="btn btn-secondary w-100" value="reboot" onclick="onCommissionClick(this)">Normal Reboot</button>
                         </div>
                         <div>
                             <button class="btn btn-warning w-100" value="bootsel" onclick="onCommissionClick(this)">Boot to BOOTSEL</button>
                         </div>
                     </div>
+                    <div class="d-flex justify-content-center">
+                        <label class="alert alert-warning mt-3" id="web_phy_fallback" role="alert" hidden>
+                            Make Credentials Fallback Mode
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="position-fixed bottom-0 end-0 p-3">
+            <div class="toast bg-success-subtle" id="web_phy_toast" role="status" aria-live="polite" aria-atomic="true">
+                <div class="d-flex">
+                    <label class="toast-body">Commission Succeeded</label>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
             </div>
         </div>
@@ -168,14 +208,21 @@
         const elm_pico_version = document.querySelector("#pico_version");
         const elm_pico_serial = document.querySelector("#pico_serial");
 
+        const elm_web_usb_connect = document.querySelector("#web_usb_connect");
+        const elm_web_usb_disconnect = document.querySelector("#web_usb_disconnect");
+        const elm_web_usb_alert = document.querySelector("#web_usb_alert");
+
         class Picokey {
             #dev = undefined;
+            #itf = undefined;
             #epi = undefined;
             #epo = undefined;
             #bSlot = 0;
-            bSeq = 0;
+            #bSeq = 0;
+            #iccpwr = false;
+            #rescue = undefined;
 
-            Initial(device) {
+            async Initial(device) {
                 let _itf, _epi, _epo;
 
                 device.configurations.forEach(cfg => {
@@ -191,31 +238,28 @@
                 });
 
                 if (_itf && _epi && _epo) {
-                    device.open()
+                    await device.open()
                     .then(_ => device.selectConfiguration(1))
                     .then(_ => device.claimInterface(_itf.interfaceNumber))
                     .then(_ => {
-                        this.dev = device;
-                        this.epi = _epi;
-                        this.epo = _epo;
-                        this.bSlot = 0;
-                        this.bSeq = 0;
-                        console.log(`${device.productName} Connected`);
+                        this.#dev = device;
+                        this.#itf = _itf;
+                        this.#epi = _epi;
+                        this.#epo = _epo;
+                        console.log(`${device.productName} Initialized`);
                     });
                 }
             }
 
             Dispose() {
-                this.dev = undefined;
-                this.epi = undefined;
-                this.epo = undefined;
-                this.bSlot = 0;
-                this.bSeq = 0;
+                if (this.Usable()) {
+                    this.#dev.close();
+                }
             }
 
             Usable() {
-                if (this.dev && this.dev.opened) {
-                    if (this.epi && this.epo) {
+                if (this.#dev && this.#dev.opened) {
+                    if (this.#itf && this.#itf.claimed) {
                         return true;
                     }
                 }
@@ -226,12 +270,12 @@
                 if (!this.Usable()) {
                     throw new Error("Device not usable");
                 }
-                this.bSeq = this.bSeq == 255 ? 0 : this.bSeq + 1;
-                return this.dev.transferOut(this.epo.endpointNumber, new Uint8Array(data))
+                return this.#dev.transferOut(this.#epo.endpointNumber, new Uint8Array(data))
                     .then(result => {
                         if (result.status == "ok") {
                             console.log(`Send: ${arrayToHexDump(data)}`);
                         } else {
+                            this.#dev.clearHalt();
                             throw new Error("Send Data Error");
                         }
                     });
@@ -241,13 +285,14 @@
                 if (!this.Usable()) {
                     throw new Error("Device not usable");
                 }
-                return this.dev.transferIn(this.epi.endpointNumber, 4096)
+                return this.#dev.transferIn(this.#epi.endpointNumber, 2048)
                     .then(result => {
                         if (result.status == "ok") {
                             var data = new Uint8Array(result.data.buffer);
                             console.log(`Recv: ${arrayToHexDump(data)}`);
                             return data;
                         } else {
+                            this.#dev.clearHalt();
                             throw new Error("Recv Data Error");
                         }
                     });
@@ -257,53 +302,69 @@
                 return this.Send(data)
                     .then(_ => this.Recv())
                     .then(resp => {
-                        var temp = new DataView(resp.buffer);
-                        var dwLength = temp.getUint32(1, true);
-                        temp = resp.slice(resp.length - dwLength);
-                        return new Uint8Array(temp);
+                        if (resp[6] != this.#bSeq) {
+                            throw new Error("bSeq mismatch");
+                        }
+                        if (resp[7] >> 6 != 0) {
+                            throw new Error("bStatus error");
+                        }
+                        if (resp[9] != 0) {
+                            throw new Error("Extended APDU");
+                        }
+                        this.#bSeq = this.#bSeq == 255 ? 0 : this.#bSeq + 1;
+                        var dwLength = new DataView(resp.buffer).getUint32(1, true);
+                        return new Uint8Array(resp.slice(-dwLength));
                     });
             }
 
-            Apdu2XfrData(apdu) {
-                var data = new Uint8Array(10 + apdu.length);
-                var size = new DataView(new ArrayBuffer(4));
-                size.setUint32(0, apdu.length, true);
-                data.set(new Uint8Array([ 0x6F ]), 0);
-                data.set(new Uint8Array(size.buffer), 1);
-                data.set(new Uint8Array([ this.bSlot, this.bSeq, 0, 0, 0 ]), 5);
-                data.set(new Uint8Array(apdu), 10);
-                return data;
-            }
-
-            async XfrBlock(data) {
-                return this.Transfer(this.Apdu2XfrData(data))
+            async XfrBlock(apdu) {
+                var data = new Uint8Array([ 0x6F, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0, ...apdu ]);
+                new DataView(data.buffer).setUint32(1, apdu.length, true);
+                return this.Transfer(data)
                     .then(resp => {
-                        var sw1 = resp[resp.length - 2];
-                        var sw2 = resp[resp.length - 1];
-                        if (sw1 != 0x90 && sw2 != 0) {
-                            throw new Error("APDU response invalid");
+                        var sw = new DataView(resp.buffer.slice(-2)).getUint16(0);
+                        if (sw != 0x9000) {
+                            throw new Error("SW code invalid");
                         }
-                        var data = resp.slice(0, resp.length - 2);
-                        return new Uint8Array(data);
+                        return new Uint8Array(resp.slice(0, -2));
                     });
             }
 
             async IccPowerOn() {
-                return this.Transfer([ 0x62, 0, 0, 0, 0, this.bSlot, this.bSeq, 1, 0, 0 ])
-                    .then(_ => console.log("IccPowerOn Sent"));
+                return this.Transfer([ 0x62, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 1, 0, 0 ])
+                    .then(resp => {
+                        var sw = new DataView(resp.buffer.slice(-3)).getUint16(0);
+                        if (sw != 0x9000) {
+                            throw new Error("SW code invalid");
+                        }
+                    })
+                    .then(_ => {
+                        this.#iccpwr = true;
+                        console.log("IccPowerOn Sent");
+                    });
             }
 
             async IccPowerOff() {
-                return this.Transfer([ 0x63, 0, 0, 0, 0, this.bSlot, this.bSeq, 0, 0, 0 ])
-                    .then(_ => console.log("IccPowerOff Sent"));
+                return this.Transfer([ 0x63, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0 ])
+                    .then(_ => {
+                        this.#iccpwr = false;
+                        this.#rescue = false;
+                        console.log("IccPowerOff Sent");
+                    });
             }
 
             async EnterRescue() {
-                return this.XfrBlock([ 0x00, 0xA4, 0x04, 0x04, 0x08, 0xA0, 0x58, 0x3F, 0xC1, 0x9B, 0x7E, 0x4F, 0x21, 0x00 ])
+                if (!this.#iccpwr) {
+                    await this.IccPowerOn();
+                }
+                if (!this.#rescue) {
+                    await this.XfrBlock([ 0x00, 0xA4, 0x04, 0x04, 0x08, 0xA0, 0x58, 0x3F, 0xC1, 0x9B, 0x7E, 0x4F, 0x21, 0x00 ])
                     .then(resp => {
+                        this.#rescue = resp;
                         console.log("Entered Rescue Mode");
-                        return resp;
                     });
+                }
+                return this.#rescue;
             }
         }
 
@@ -316,13 +377,21 @@
             return list.join(" ");
         }
 
-        async function requestDevice(event) {
+        async function createPicokey(device) {
+            pk.Dispose();
+            pk = new Picokey();
+            await pk.Initial(device)
+            .then(_ => pk.IccPowerOff());
+            showDeviceInfo();
+        }
+
+        function requestDevice(event) {
             navigator.usb.requestDevice({
                 filters: [{
-                    classCode: 0
+                    classCode: 255
                 }]
             })
-            .then(device => pk.Initial(device));
+            .then(async device => await createPicokey(device));
         }
 
         async function forgetDevices(event) {
@@ -336,9 +405,8 @@
             location.reload();
         }
 
-        async function showDeviceInfo() {
-            pk.IccPowerOn()
-            .then(_ => pk.EnterRescue())
+        function showDeviceInfo() {
+            pk.EnterRescue()
             .then(resp => {
                 const PICO_MCU = [ "RP2040", "RP2350", "ESP32", "EMULATION" ];
                 const PICO_PRODUCT = [ "Pico Key SDK", "Pico HSM", "Pico Fido", "Pico OpenPGP" ];
@@ -346,11 +414,10 @@
                 elm_pico_product.value = PICO_PRODUCT[resp[1]];
                 elm_pico_version.value = `${resp[2]}.${resp[3]}`;
                 elm_pico_serial.value = resp.slice(4).toHex().toUpperCase();
-            })
-            .then(_ => pk.IccPowerOff());
+            });
         }
 
-        async function clearDeviceInfo() {
+        function clearDeviceInfo() {
             elm_pico_platform.value = "";
             elm_pico_product.value = "";
             elm_pico_version.value = "";
@@ -358,23 +425,32 @@
         }
 
         async function deviceMonitor(event) {
-            var devices = await navigator.usb.getDevices();
-            if (devices.length <= 0) {
-                clearDeviceInfo();
-                pk.Dispose();
+            if (!navigator.usb) {
+                clearInterval(monitorTimer);
+                elm_web_usb_alert.hidden = false;
+                elm_web_usb_connect.disabled = true;
+                elm_web_usb_disconnect.disabled = true;
+                elm_web_phy_reboot_g.hidden = true;
+                elm_web_phy_fallback.hidden = false;
                 return;
             }
 
             if (pk.Usable()) {
-                if (pk.bSeq == 0) {
-                    showDeviceInfo();
-                }
+                elm_web_phy_reboot_g.hidden = false;
+                elm_web_phy_fallback.hidden = true;
             } else {
-                devices.forEach(dev => pk.Initial(dev));
+                clearDeviceInfo();
+                elm_web_phy_reboot_g.hidden = true;
+                elm_web_phy_fallback.hidden = false;
+
+                var devices = await navigator.usb.getDevices();
+                if (devices.length > 0) {
+                    devices.forEach(async dev => await createPicokey(dev));
+                }
             }
         }
 
-        setInterval(deviceMonitor, 200);
+        let monitorTimer = setInterval(deviceMonitor, 500);
     </script>
     <script>
         const PHY_VIDPID                    = 0x0;
@@ -406,6 +482,12 @@
         const elm_opts_rainbow = document.querySelector("#phy_opts_rainbow");
         const elm_curve_secp256k1 = document.querySelector("#phy_curve_secp256k1");
         const elm_led_driver = document.querySelector("#phy_led_driver");
+
+        const elm_web_phy_apply = document.querySelector("#web_phy_apply");
+        const elm_web_phy_reset = document.querySelector("#web_phy_reset");
+        const elm_web_phy_reboot_g = document.querySelector("#web_phy_reboot_g");
+        const elm_web_phy_fallback = document.querySelector("#web_phy_fallback");
+        const elm_web_phy_toast = document.querySelector("#web_phy_toast");
 
         function GetPhyConfigData() {
             var p = 0;
@@ -487,7 +569,44 @@
             return phy_data;
         }
 
-        async function onCommissionClick(event) {
+        function doCredentailCommission(event) {
+            const challenge = new Uint8Array(32);
+            window.crypto.getRandomValues(challenge);
+
+            var pkeyCredCreateOptions = {
+                authenticatorSelection: {
+                    authenticatorAttachment: "cross-platform"
+                },
+                challenge,
+                hints: [ "security-key" ],
+                pubKeyCredParams: [
+                    { alg: -7, type: "public-key" },
+                    { alg: -257, type: "public-key" },
+                ],
+                rp: { name: "阿皇仔" },
+                user: {
+                    id: new Uint8Array(8),
+                    name: "+picoCommissionProfile",
+                    displayName: "阿皇仔"
+                }
+            };
+
+            switch (event.value) {
+                case "apply":
+                    pkeyCredCreateOptions.user.id = GetPhyConfigData();
+                    break;
+                case "reset":
+                    pkeyCredCreateOptions.user.name = "+picoResetProfile";
+                    break;
+                default:
+                    return;
+            }
+            
+            navigator.credentials.create({ publicKey: pkeyCredCreateOptions })
+                .then(_ => new bootstrap.Toast(elm_web_phy_toast).show());
+        }
+
+        function onCommissionClick(event) {
             if (!pk.Usable()) {
                 return doCredentailCommission(event);
             }
@@ -496,11 +615,7 @@
             switch (event.value) {
                 case "apply":
                     data = GetPhyConfigData();
-                    apdu = new Uint8Array(6 + data.length);
-                    apdu.set(new Uint8Array([ 0x80, 0x1C, 1, 0 ]), 0);
-                    apdu[4] = data.length;
-                    apdu.set(new Uint8Array(data), 5);
-                    apdu[apdu.length - 1] = 0;
+                    apdu = new Uint8Array([ 0x80, 0x1C, 1, 0, data.length, ...data, 0 ]);
                     break;
                 case "reset":
                     apdu = new Uint8Array([ 0x80, 0x1C, 1, 0xFF, 0, 1, 0 ]);
@@ -516,54 +631,14 @@
             }
 
             if (apdu) {
-                pk.IccPowerOn()
-                .then(_ => pk.EnterRescue())
+                pk.EnterRescue()
                 .then(_ => pk.XfrBlock(apdu))
                 .then(_ => console.log("PHY Data Sent"))
-                .then(_ => pk.IccPowerOff())
+                .then(_ => new bootstrap.Toast(elm_web_phy_toast).show());
             }
         }
 
-        async function doCredentailCommission(event) {
-            const credChallenge = new Uint8Array(32);
-            window.crypto.getRandomValues(credChallenge);
-
-            const pkeyCredCreateOptions = {
-                attestation: "direct",
-                authenticatorSelection: {
-                    authenticatorAttachment: "cross-platform"
-                },
-                challenge: credChallenge,
-                hints: [ "security-key" ],
-                pubKeyCredParams: [
-                    { alg: -257, type: "public-key" },
-                    { alg: -7, type: "public-key" }
-                ],
-                rp: { name: "阿皇仔" },
-                user: {
-                    id: undefined,
-                    name: "+picoCommissionProfile",
-                    displayName: "阿皇仔"
-                }
-            };
-
-            switch (event.value) {
-                case "apply":
-                    pkeyCredCreateOptions.user.id = GetPhyConfigData();
-                    pkeyCredCreateOptions.user.name = "+picoCommissionProfile";
-                    break;
-                case "reset":
-                    pkeyCredCreateOptions.user.id = new Uint8Array(16);
-                    pkeyCredCreateOptions.user.name = "+picoResetProfile";
-                    break;
-                default:
-                    return;
-            }
-            
-            return navigator.credentials.create({ publicKey: pkeyCredCreateOptions });
-        }
-
-        async function slideIndicator(event) {
+        function slideIndicator(event) {
             var indicator = document.querySelector(`#${event.target.id}_val`);
             if (indicator) {
                 indicator.textContent = event.target.value;
@@ -572,7 +647,7 @@
 
         elm_btn_timeout.addEventListener("input", slideIndicator);
         elm_led_btness.addEventListener("input", slideIndicator);
-        elm_usb_vendor.addEventListener("change", async (event) => {
+        elm_usb_vendor.addEventListener("change", event => {
             var data = event.target.value;
             elm_usb_vidpid.value = data;
             if (data) {
@@ -586,7 +661,12 @@
             elm_btn_timeout.dispatchEvent(new Event("input"));
             elm_led_btness.dispatchEvent(new Event("input"));
             elm_usb_vendor.dispatchEvent(new Event("change"));
-            document.querySelectorAll('[data-bs-toggle="popover"]').forEach(elm => new bootstrap.Popover(elm));
+            document.querySelectorAll('[data-bs-toggle="popover"]').forEach(elm => {
+                new bootstrap.Popover(elm, {
+                    customClass: "cst-popover",
+                    trigger: "hover focus"
+                });
+            });
         }, 100);
     </script>
 </html>
