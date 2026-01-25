@@ -23,13 +23,17 @@
                 --bs-popover-body-padding-x: 1rem;
                 --bs-popover-body-padding-y: .5rem;
             }
+            div.dropstart > ul.dropdown-menu {
+                --bs-dropdown-min-width: auto;
+            }
         </style>
     </head>
     <body>
         <div class="container" style="width: 500px;">
-            <nav class="nav nav-tabs row-cols-2 mt-1" role="tablist">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#nav-webusb" role="tab">WebUSB</button>
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
+            <nav class="nav nav-tabs row-cols-auto mt-1" role="tablist">
+                <button class="nav-link active" style="width: 40%" data-bs-toggle="tab" data-bs-target="#nav-webusb" role="tab">WebUSB</button>
+                <button class="nav-link" style="width: 40%" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
+                <button class="nav-link flex-fill" data-bs-toggle="tab" data-bs-target="#nav-otp" role="tab">OTP</button>
             </nav>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="nav-webusb" role="tabpanel">
@@ -191,6 +195,73 @@
                         </label>
                     </div>
                 </div>
+                <div class="tab-pane fade" id="nav-otp" role="tabpanel">
+                    <div class="btn-group mt-2 w-100">
+                        <div class="input-group">
+                            <label class="input-group-text">Slot 1</label>
+                            <input class="form-control rounded-0" type="text" id="otp_slot_1" disabled>
+                        </div>
+                        <div class="btn-group dropstart">
+                            <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">Swap</button>
+                            <ul class="dropdown-menu">
+                                <li><button class="dropdown-item" data-slot="1" data-swap="2" onclick="onOtpSwapClick(this)">Slot 2</button></li>
+                                <li><button class="dropdown-item" data-slot="1" data-swap="3" onclick="onOtpSwapClick(this)">Slot 3</button></li>
+                                <li><button class="dropdown-item" data-slot="1" data-swap="4" onclick="onOtpSwapClick(this)">Slot 4</button></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-danger" data-slot="1" onclick="onOtpDeleteClick(this)">Delete</button>
+                    </div>
+                    <div class="btn-group mt-2 w-100">
+                        <div class="input-group">
+                            <label class="input-group-text">Slot 2</label>
+                            <input class="form-control rounded-0" type="text" id="otp_slot_2" disabled>
+                        </div>
+                        <div class="btn-group dropstart">
+                            <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">Swap</button>
+                            <ul class="dropdown-menu">
+                                <li><button class="dropdown-item" data-slot="2" data-swap="1" onclick="onOtpSwapClick(this)">Slot 1</button></li>
+                                <li><button class="dropdown-item" data-slot="2" data-swap="3" onclick="onOtpSwapClick(this)">Slot 3</button></li>
+                                <li><button class="dropdown-item" data-slot="2" data-swap="4" onclick="onOtpSwapClick(this)">Slot 4</button></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-danger" data-slot="2" onclick="onOtpDeleteClick(this)">Delete</button>
+                    </div>
+                    <div class="btn-group mt-2 w-100">
+                        <div class="input-group">
+                            <label class="input-group-text">Slot 3</label>
+                            <input class="form-control rounded-0" type="text" id="otp_slot_3" disabled>
+                        </div>
+                        <div class="btn-group dropstart">
+                            <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">Swap</button>
+                            <ul class="dropdown-menu">
+                                <li><button class="dropdown-item" data-slot="3" data-swap="1" onclick="onOtpSwapClick(this)">Slot 1</button></li>
+                                <li><button class="dropdown-item" data-slot="3" data-swap="2" onclick="onOtpSwapClick(this)">Slot 2</button></li>
+                                <li><button class="dropdown-item" data-slot="3" data-swap="4" onclick="onOtpSwapClick(this)">Slot 4</button></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-danger" data-slot="3" onclick="onOtpDeleteClick(this)">Delete</button>
+                    </div>
+                    <div class="btn-group mt-2 w-100">
+                        <div class="input-group">
+                            <label class="input-group-text">Slot 4</label>
+                            <input class="form-control rounded-0" type="text" id="otp_slot_4" disabled>
+                        </div>
+                        <div class="btn-group dropstart">
+                            <button class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown">Swap</button>
+                            <ul class="dropdown-menu">
+                                <li><button class="dropdown-item" data-slot="4" data-swap="1" onclick="onOtpSwapClick(this)">Slot 1</button></li>
+                                <li><button class="dropdown-item" data-slot="4" data-swap="2" onclick="onOtpSwapClick(this)">Slot 2</button></li>
+                                <li><button class="dropdown-item" data-slot="4" data-swap="3" onclick="onOtpSwapClick(this)">Slot 3</button></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-danger" data-slot="4" onclick="onOtpDeleteClick(this)">Delete</button>
+                    </div>
+                    <div class="row row-cols-1 mx-0 me-auto mt-3">
+                        <div class="d-flex justify-content-center">
+                            <button class="btn btn-primary" id="web_otp_read" onclick="onOtpReadClick(this)" disabled>Read OTP Data</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="position-fixed bottom-0 end-0 p-3">
@@ -202,7 +273,7 @@
             </div>
         </div>
     </body>
-    <script>
+    <script aria-label="web_script">
         const elm_pico_platform = document.querySelector("#pico_platform");
         const elm_pico_product = document.querySelector("#pico_product");
         const elm_pico_version = document.querySelector("#pico_version");
@@ -211,265 +282,6 @@
         const elm_web_usb_connect = document.querySelector("#web_usb_connect");
         const elm_web_usb_disconnect = document.querySelector("#web_usb_disconnect");
         const elm_web_usb_alert = document.querySelector("#web_usb_alert");
-
-        class Picokey {
-            #dev = undefined;
-            #itf = undefined;
-            #epi = undefined;
-            #epo = undefined;
-            #bSlot = 0;
-            #bSeq = 0;
-            #iccpwr = false;
-            #rescue = undefined;
-
-            async Initial(device) {
-                let _itf, _epi, _epo;
-
-                device.configurations.forEach(cfg => {
-                    cfg.interfaces.forEach(itf => {
-                        if (itf.alternate.interfaceClass == 255) {
-                            itf.alternate.endpoints.forEach(endp => {
-                                _epi = endp.direction == 'in' ? endp : _epi;
-                                _epo = endp.direction == 'out' ? endp : _epo;
-                            });
-                            _itf = itf;
-                        }
-                    });
-                });
-
-                if (_itf && _epi && _epo) {
-                    await device.open()
-                    .then(_ => device.selectConfiguration(1))
-                    .then(_ => device.claimInterface(_itf.interfaceNumber))
-                    .then(_ => {
-                        this.#dev = device;
-                        this.#itf = _itf;
-                        this.#epi = _epi;
-                        this.#epo = _epo;
-                        console.log(`${device.productName} Initialized`);
-                    });
-                }
-            }
-
-            Dispose() {
-                if (this.Usable()) {
-                    this.#dev.close();
-                }
-            }
-
-            Usable() {
-                if (this.#dev && this.#dev.opened) {
-                    if (this.#itf && this.#itf.claimed) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-
-            async Send(data) {
-                if (!this.Usable()) {
-                    throw new Error("Device not usable");
-                }
-                return this.#dev.transferOut(this.#epo.endpointNumber, new Uint8Array(data))
-                    .then(result => {
-                        if (result.status == "ok") {
-                            console.log(`Send: ${arrayToHexDump(data)}`);
-                        } else {
-                            this.#dev.clearHalt();
-                            throw new Error("Send Data Error");
-                        }
-                    });
-            }
-
-            async Recv() {
-                if (!this.Usable()) {
-                    throw new Error("Device not usable");
-                }
-                return this.#dev.transferIn(this.#epi.endpointNumber, 2048)
-                    .then(result => {
-                        if (result.status == "ok") {
-                            var data = new Uint8Array(result.data.buffer);
-                            console.log(`Recv: ${arrayToHexDump(data)}`);
-                            return data;
-                        } else {
-                            this.#dev.clearHalt();
-                            throw new Error("Recv Data Error");
-                        }
-                    });
-            }
-
-            async Transfer(data) {
-                return this.Send(data)
-                    .then(_ => this.Recv())
-                    .then(resp => {
-                        if (resp[6] != this.#bSeq) {
-                            throw new Error("bSeq mismatch");
-                        }
-                        if (resp[7] >> 6 != 0) {
-                            throw new Error("bStatus error");
-                        }
-                        if (resp[9] != 0) {
-                            throw new Error("Extended APDU");
-                        }
-                        this.#bSeq = this.#bSeq == 255 ? 0 : this.#bSeq + 1;
-                        var dwLength = new DataView(resp.buffer).getUint32(1, true);
-                        return new Uint8Array(resp.slice(-dwLength));
-                    });
-            }
-
-            async XfrBlock(apdu) {
-                var data = new Uint8Array([ 0x6F, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0, ...apdu ]);
-                new DataView(data.buffer).setUint32(1, apdu.length, true);
-                return this.Transfer(data)
-                    .then(resp => {
-                        var sw = new DataView(resp.buffer.slice(-2)).getUint16(0);
-                        if (sw != 0x9000) {
-                            throw new Error("SW code invalid");
-                        }
-                        return new Uint8Array(resp.slice(0, -2));
-                    });
-            }
-
-            async IccPowerOn() {
-                return this.Transfer([ 0x62, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 1, 0, 0 ])
-                    .then(resp => {
-                        var sw = new DataView(resp.buffer.slice(-3)).getUint16(0);
-                        if (sw != 0x9000) {
-                            throw new Error("SW code invalid");
-                        }
-                    })
-                    .then(_ => {
-                        this.#iccpwr = true;
-                        console.log("IccPowerOn Sent");
-                    });
-            }
-
-            async IccPowerOff() {
-                return this.Transfer([ 0x63, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0 ])
-                    .then(_ => {
-                        this.#iccpwr = false;
-                        this.#rescue = false;
-                        console.log("IccPowerOff Sent");
-                    });
-            }
-
-            async EnterRescue() {
-                if (!this.#iccpwr) {
-                    await this.IccPowerOn();
-                }
-                if (!this.#rescue) {
-                    await this.XfrBlock([ 0x00, 0xA4, 0x04, 0x04, 0x08, 0xA0, 0x58, 0x3F, 0xC1, 0x9B, 0x7E, 0x4F, 0x21, 0x00 ])
-                    .then(resp => {
-                        this.#rescue = resp;
-                        console.log("Entered Rescue Mode");
-                    });
-                }
-                return this.#rescue;
-            }
-        }
-
-        let pk = new Picokey();
-
-        function arrayToHexDump(data) {
-            var list = [];
-            var data = new Uint8Array(data);
-            data.forEach(elm => list.push(elm.toString(16).toUpperCase().padStart(2, '0')));
-            return list.join(" ");
-        }
-
-        async function createPicokey(device) {
-            pk.Dispose();
-            pk = new Picokey();
-            await pk.Initial(device)
-            .then(_ => pk.IccPowerOff());
-            showDeviceInfo();
-        }
-
-        function requestDevice(event) {
-            navigator.usb.requestDevice({
-                filters: [{
-                    classCode: 255
-                }]
-            })
-            .then(async device => await createPicokey(device));
-        }
-
-        async function forgetDevices(event) {
-            await navigator.usb.getDevices()
-                .then(devices => devices.forEach(dev => {
-                    dev.close()
-                    .then(_ => dev.forget())
-                    .then(_ => console.log(`${dev.productName} Disconnected`))
-                    .then(_ => clearDeviceInfo());
-                }));
-            location.reload();
-        }
-
-        function showDeviceInfo() {
-            pk.EnterRescue()
-            .then(resp => {
-                const PICO_MCU = [ "RP2040", "RP2350", "ESP32", "EMULATION" ];
-                const PICO_PRODUCT = [ "Pico Key SDK", "Pico HSM", "Pico Fido", "Pico OpenPGP" ];
-                elm_pico_platform.value = PICO_MCU[resp[0]];
-                elm_pico_product.value = PICO_PRODUCT[resp[1]];
-                elm_pico_version.value = `${resp[2]}.${resp[3]}`;
-                elm_pico_serial.value = resp.slice(4).toHex().toUpperCase();
-            });
-        }
-
-        function clearDeviceInfo() {
-            elm_pico_platform.value = "";
-            elm_pico_product.value = "";
-            elm_pico_version.value = "";
-            elm_pico_serial.value = "";
-        }
-
-        async function deviceMonitor(event) {
-            if (!navigator.usb) {
-                clearInterval(monitorTimer);
-                elm_web_usb_alert.hidden = false;
-                elm_web_usb_connect.disabled = true;
-                elm_web_usb_disconnect.disabled = true;
-                elm_web_phy_reboot_g.hidden = true;
-                elm_web_phy_fallback.hidden = false;
-                return;
-            }
-
-            if (pk.Usable()) {
-                elm_web_phy_reboot_g.hidden = false;
-                elm_web_phy_fallback.hidden = true;
-            } else {
-                clearDeviceInfo();
-                elm_web_phy_reboot_g.hidden = true;
-                elm_web_phy_fallback.hidden = false;
-
-                var devices = await navigator.usb.getDevices();
-                if (devices.length > 0) {
-                    devices.forEach(async dev => await createPicokey(dev));
-                }
-            }
-        }
-
-        let monitorTimer = setInterval(deviceMonitor, 500);
-    </script>
-    <script>
-        const PHY_VIDPID                    = 0x0;
-        const PHY_LED_GPIO                  = 0x4;
-        const PHY_LED_BTNESS                = 0x5;
-        const PHY_OPTS                      = 0x6;
-        const PHY_UP_BTN                    = 0x8;
-        const PHY_USB_PRODUCT               = 0x9;
-        const PHY_ENABLED_CURVES            = 0xA;
-        const PHY_ENABLED_USB_ITF           = 0xB;
-        const PHY_LED_DRIVER                = 0xC;
-
-        const PHY_OPT_WCID                  = 0x1;
-        const PHY_OPT_DIMM                  = 0x2;
-        const PHY_OPT_DISABLE_POWER_RESET   = 0x4;
-        const PHY_OPT_LED_STEADY            = 0x8;
-        const PHY_OPT_LED_RAINBOW           = 0x10;
-
-        const PHY_CURVE_SECP256K1           = 0x8;
 
         const elm_usb_vendor = document.querySelector("#phy_usb_vendor");
         const elm_usb_vidpid = document.querySelector("#phy_usb_vidpid");
@@ -488,6 +300,366 @@
         const elm_web_phy_reboot_g = document.querySelector("#web_phy_reboot_g");
         const elm_web_phy_fallback = document.querySelector("#web_phy_fallback");
         const elm_web_phy_toast = document.querySelector("#web_phy_toast");
+
+        const elm_otp_slot1 = document.querySelector("#otp_slot_1");
+        const elm_otp_slot2 = document.querySelector("#otp_slot_2");
+        const elm_otp_slot3 = document.querySelector("#otp_slot_3");
+        const elm_otp_slot4 = document.querySelector("#otp_slot_4");
+
+        const elm_web_otp_read = document.querySelector("#web_otp_read");
+
+        const otp_slot_list = [
+            elm_otp_slot1, elm_otp_slot2, elm_otp_slot3, elm_otp_slot4
+        ];
+
+        function arrayToHexDump(data) {
+            var list = [];
+            var data = new Uint8Array(data);
+            data.forEach(elm => list.push(elm.toString(16).toUpperCase().padStart(2, '0')));
+            return list.join(" ");
+        }
+
+        function hexDumpToArray(data) {
+            var list = []
+            data = data.replaceAll(' ', '');
+            for (i = 0; i < data.length; i += 2) {
+                list.push(parseInt(data.slice(i, i + 2), 16));
+            }
+            return new Uint8Array(list);
+        }
+
+        [ elm_btn_timeout, elm_led_btness ].forEach(elm => {
+            elm.addEventListener("input", event => {
+                var label_elm = document.querySelector(`label[id^=${event.target.id}]`);
+                if (label_elm) {
+                    label_elm.textContent = event.target.value;
+                }
+            });
+        });
+
+        elm_usb_vendor.addEventListener("change", event => {
+            elm_usb_vidpid.value = event.target.value;
+            elm_usb_vidpid.disabled = event.target.value ? true : false;
+        });
+
+        otp_slot_list.forEach(elm => {
+            elm.addEventListener("change", event => {
+                document.querySelectorAll(`.btn-group:has([id^=${event.target.id}]) .btn`).forEach(btn_elm => {
+                    btn_elm.disabled = event.target.value ? false : true;
+                });
+            });
+        });
+
+        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(elm => {
+            new bootstrap.Popover(elm, {
+                customClass: "cst-popover",
+                trigger: "hover focus"
+            });
+        });
+    </script>
+    <script aria-label="usb_script">
+        class Picokey {
+            #dev = undefined;
+            #itf = undefined;
+            #epi = undefined;
+            #epo = undefined;
+            #bSlot = 0;
+            #bSeq = 0;
+            #init = false;
+            #acti = false;
+
+            Initial(device) {
+                this.#dev = this.#itf = this.#epi = this.#epo = undefined;
+
+                device.configurations.forEach(cfg => {
+                    cfg.interfaces.forEach(itf => {
+                        if (itf.alternate.interfaceClass == 255) {
+                            itf.alternate.endpoints.forEach(endp => {
+                                this.#epi = endp.direction == 'in' ? endp : this.#epi;
+                                this.#epo = endp.direction == 'out' ? endp : this.#epo;
+                            });
+                            this.#itf = itf;
+                        }
+                    });
+                });
+
+                if (this.#itf && this.#epi && this.#epo) {
+                    return device.open()
+                    .then(_ => device.selectConfiguration(1))
+                    .then(_ => device.claimInterface(this.#itf.interfaceNumber))
+                    .then(_ => console.log(`${device.productName} Initialized`))
+                    .then(_ => this.#dev = device, this.#init = true);
+                }
+
+                throw new Error("Picokey Uninitialized");
+            }
+
+            Dispose() {
+                return this.Usable()
+                .then(_ => this.#dev.close())
+                .catch(_ => Promise.resolve());
+            }
+
+            Usable() {
+                if (!this.#init || !this.#dev || !this.#itf ||
+                    !this.#dev.opened || !this.#itf.claimed) {
+                    return Promise.reject("Device not usable");
+                }
+                return Promise.resolve(true);
+            }
+
+            Send(data) {
+                return this.Usable()
+                    .then(_ => this.#dev.transferOut(this.#epo.endpointNumber, new Uint8Array(data)))
+                    .then(result => {
+                        if (result.status == "ok") {
+                            console.log(`Send: ${arrayToHexDump(data)}`);
+                        } else {
+                            this.#dev.clearHalt();
+                            throw new Error("Send Data Error");
+                        }
+                    });
+            }
+
+            Recv() {
+                return this.Usable()
+                    .then(_ => this.#dev.transferIn(this.#epi.endpointNumber, 2048))
+                    .then(result => {
+                        if (result.status == "ok") {
+                            var data = new Uint8Array(result.data.buffer);
+                            console.log(`Recv: ${arrayToHexDump(data)}`);
+                            return data;
+                        } else {
+                            this.#dev.clearHalt();
+                            throw new Error("Recv Data Error");
+                        }
+                    });
+            }
+
+            Transfer(data) {
+                return this.Send(data)
+                    .then(_ => this.Recv())
+                    .then(resp => {
+                        if (resp[6] != this.#bSeq) {
+                            throw new Error("bSeq mismatch");
+                        }
+                        if (resp[7] >> 6 != 0) {
+                            throw new Error("bStatus error");
+                        }
+                        if (resp[9] != 0) {
+                            throw new Error("Extended APDU");
+                        }
+                        this.#bSeq = this.#bSeq == 255 ? 0 : this.#bSeq + 1;
+                        var dwLength = new DataView(resp.buffer).getUint32(1, true);
+                        return resp.slice(-dwLength);
+                    });
+            }
+
+            XfrBlock(apdu) {
+                var data = new Uint8Array([ 0x6F, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0, ...apdu ]);
+                new DataView(data.buffer).setUint32(1, apdu.length, true);
+                return this.Transfer(data)
+                    .then(resp => {
+                        var sw = new DataView(resp.buffer.slice(-2)).getUint16(0);
+                        if (sw != 0x9000) {
+                            throw new Error("SW code invalid");
+                        }
+                        return resp.slice(0, -2);
+                    });
+            }
+
+            IccPowerOn() {
+                if (this.#acti) {
+                    return Promise.resolve();
+                }
+                return this.Transfer([ 0x62, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 1, 0, 0 ])
+                    .then(resp => {
+                        var sw = new DataView(resp.buffer.slice(-3)).getUint16(0);
+                        if (sw != 0x9000) {
+                            throw new Error("SW code invalid");
+                        }
+                    })
+                    .then(_ => {
+                        this.#acti = true;
+                        console.log("IccPowerOn Sent");
+                    });
+            }
+
+            IccPowerOff() {
+                if (!this.#acti) {
+                    return Promise.resolve();
+                }
+                return this.Transfer([ 0x63, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0 ])
+                    .then(_ => {
+                        this.#acti = false;
+                        console.log("IccPowerOff Sent");
+                    });
+            }
+
+            Applet_Send(applet, apdu) {
+                if (applet == "rescue") {
+                    this.callback = this.Rescue_Applet;
+                } else if (applet == "otp") {
+                    this.callback = this.OTP_Applet;
+                } else {
+                    this.callback = Promise.resolve;
+                }
+                return this.callback()
+                .then(_ => this.XfrBlock(apdu));
+            }
+
+            Rescue_Applet() {
+                return this.IccPowerOn()
+                .then(_ => this.XfrBlock([ 0x00, 0xA4, 0x04, 0x04, 0x08, 0xA0, 0x58, 0x3F, 0xC1, 0x9B, 0x7E, 0x4F, 0x21, 0x00 ]))
+                .then(resp => {
+                    console.log("Selected Rescue Applet");
+                    return resp;
+                });
+            }
+
+            Rescue_Phy_Write(data) {
+                return this.Applet_Send("rescue", [ 0x80, 0x1C, 1, 0, data.length, ...data, 0 ])
+                .then(_ => console.log("PHY Data Written"));
+            }
+
+            Rescue_Phy_Reset() {
+                return this.Applet_Send("rescue", [ 0x80, 0x1C, 1, 0xFF, 0, 1, 0 ])
+                .then(_ => console.log("PHY Data Reset"));
+            }
+
+            Rescue_Reboot(BOOTSEL = false) {
+                return this.Applet_Send("rescue", [ 0x80, 0x1F, BOOTSEL ? 1 : 0, 0, 0, 1, 0 ])
+                .then(_ => console.log("Reboot Sent"));
+            }
+
+            OTP_Applet() {
+                return this.IccPowerOn()
+                .then(_ => this.XfrBlock([ 0x00, 0xA4, 0x04, 0x04, 7, 0xA0, 0x00, 0x00, 0x05, 0x27, 0x20, 0x01 ]))
+                .then(_ => console.log("Selected OTP Applet"));
+            }
+
+            OTP_ReadStatusExt() {
+                return this.Applet_Send("otp", [ 0x00, 0x01, 0x14, 0, 0, 1, 0 ])
+                .then(resp => {
+                    console.log("OTP Extent Status Read");
+                    return resp;
+                });
+            }
+
+            OTP_SwapSlot(from, to) {
+                var st = [
+                    [ [-1,-1], [0,0], [0,1], [0,2] ],
+                    [ [0,0], [-1,-1], [1,1], [1,2] ],
+                    [ [0,1], [1,1], [-1,-1], [2,2] ],
+                    [ [0,2], [1,2], [2,2], [-1,-1] ],
+                ][from - 1][to - 1];
+                return this.Applet_Send("otp", [ 0x00, 0x01, 0x06, 0, 2, st[0], st[1], 2 ])
+                .then(_ => console.log("OTP Slot Swapped"));
+            }
+
+            OTP_DeleteSlot(slot) {
+                var st = [ [1,0], [3,0], [1,2], [1,3] ][slot - 1];
+                var otp_config = new Uint8Array(52);
+                return this.Applet_Send("otp", [ 0x00, 0x01, st[0], st[1], otp_config.length, ...otp_config, 0 ])
+                .then(_ => console.log("OTP Slot Deleted"));
+            }
+        }
+
+        let pk = new Picokey();
+
+        function createPicokey(device) {
+            return pk.Dispose()
+            .then(_ => pk.Initial(device))
+            .then(_ => pk.IccPowerOff())
+            .then(_ => showDeviceInfo());
+        }
+
+        function requestDevice(event) {
+            navigator.usb.requestDevice({
+                filters: [{
+                    classCode: 255
+                }]
+            })
+            .then(async device => await createPicokey(device));
+        }
+
+        function forgetDevices(event) {
+            navigator.usb.getDevices()
+            .then(devices => devices.forEach(dev => dev.forget()))
+            .then(_ => location.reload());
+        }
+
+        function showDeviceInfo() {
+            pk.Rescue_Applet()
+            .then(resp => {
+                const PICO_MCU = [ "RP2040", "RP2350", "ESP32", "EMULATION" ];
+                const PICO_PRODUCT = [ "Pico Key SDK", "Pico HSM", "Pico Fido", "Pico OpenPGP" ];
+                elm_pico_platform.value = PICO_MCU[resp[0]];
+                elm_pico_product.value = PICO_PRODUCT[resp[1]];
+                elm_pico_version.value = `${resp[2]}.${resp[3]}`;
+                elm_pico_serial.value = resp.slice(4).toHex().toUpperCase();
+            });
+        }
+
+        function clearDeviceInfo() {
+            [
+                elm_pico_platform, elm_pico_product,
+                elm_pico_version, elm_pico_serial,
+                ...otp_slot_list
+            ].forEach(elm => {
+                elm.value = "";
+                elm.dispatchEvent(new Event("change"));
+            });
+            elm_web_phy_reboot_g.hidden = true;
+            elm_web_phy_fallback.hidden = false;
+            elm_web_otp_read.disabled = true;
+        }
+
+        async function deviceMonitor(event) {
+            if (!navigator.usb) {
+                clearInterval(monitorTimer);
+                elm_web_usb_connect.disabled = true;
+                elm_web_usb_disconnect.disabled = true;
+                elm_web_usb_alert.hidden = false;
+                elm_web_phy_reboot_g.hidden = true;
+                elm_web_phy_fallback.hidden = false;
+                elm_web_otp_read.disabled = true;
+                return;
+            }
+
+            await pk.Usable()
+            .then(_ => {
+                elm_web_phy_reboot_g.hidden = false;
+                elm_web_phy_fallback.hidden = true;
+                elm_web_otp_read.disabled = false;
+            })
+            .catch(_ => {
+                clearDeviceInfo();
+                navigator.usb.getDevices()
+                .then(devices => devices.forEach(async dev => await createPicokey(dev)));
+            });
+        }
+
+        let monitorTimer = setInterval(deviceMonitor, 500);
+    </script>
+    <script aria-label="phy_script">
+        const PHY_VIDPID                    = 0x0;
+        const PHY_LED_GPIO                  = 0x4;
+        const PHY_LED_BTNESS                = 0x5;
+        const PHY_OPTS                      = 0x6;
+        const PHY_UP_BTN                    = 0x8;
+        const PHY_USB_PRODUCT               = 0x9;
+        const PHY_ENABLED_CURVES            = 0xA;
+        const PHY_ENABLED_USB_ITF           = 0xB;
+        const PHY_LED_DRIVER                = 0xC;
+
+        const PHY_OPT_WCID                  = 0x1;
+        const PHY_OPT_DIMM                  = 0x2;
+        const PHY_OPT_DISABLE_POWER_RESET   = 0x4;
+        const PHY_OPT_LED_STEADY            = 0x8;
+        const PHY_OPT_LED_RAINBOW           = 0x10;
+
+        const PHY_CURVE_SECP256K1           = 0x8;
 
         function GetPhyConfigData() {
             var p = 0;
@@ -569,14 +741,35 @@
             return phy_data;
         }
 
-        function doCredentailCommission(event) {
+        function doRescueCommission(elem) {
+            switch (elem.value) {
+                case "apply":
+                    resp = pk.Rescue_Phy_Write(GetPhyConfigData());
+                    break;
+                case "reset":
+                    resp = pk.Rescue_Phy_Reset();
+                    break;
+                case "reboot":
+                    resp = pk.Rescue_Reboot();
+                    break;
+                case "bootsel":
+                    resp = pk.Rescue_Reboot(true);
+                    break;
+                default:
+                    break;
+            }
+
+            if (resp) {
+                resp.then(_ => new bootstrap.Toast(elm_web_phy_toast).show());
+            }
+        }
+
+        function doCredentailCommission(elem) {
             const challenge = new Uint8Array(32);
             window.crypto.getRandomValues(challenge);
 
             var pkeyCredCreateOptions = {
-                authenticatorSelection: {
-                    authenticatorAttachment: "cross-platform"
-                },
+                authenticatorSelection: { authenticatorAttachment: "cross-platform" },
                 challenge,
                 hints: [ "security-key" ],
                 pubKeyCredParams: [
@@ -591,7 +784,7 @@
                 }
             };
 
-            switch (event.value) {
+            switch (elem.value) {
                 case "apply":
                     pkeyCredCreateOptions.user.id = GetPhyConfigData();
                     break;
@@ -599,74 +792,137 @@
                     pkeyCredCreateOptions.user.name = "+picoResetProfile";
                     break;
                 default:
-                    return;
+                    break;
             }
             
             navigator.credentials.create({ publicKey: pkeyCredCreateOptions })
-                .then(_ => new bootstrap.Toast(elm_web_phy_toast).show());
+            .then(_ => new bootstrap.Toast(elm_web_phy_toast).show());
         }
 
-        function onCommissionClick(event) {
-            if (!pk.Usable()) {
-                return doCredentailCommission(event);
-            }
-
-            var apdu = undefined;
-            switch (event.value) {
-                case "apply":
-                    data = GetPhyConfigData();
-                    apdu = new Uint8Array([ 0x80, 0x1C, 1, 0, data.length, ...data, 0 ]);
-                    break;
-                case "reset":
-                    apdu = new Uint8Array([ 0x80, 0x1C, 1, 0xFF, 0, 1, 0 ]);
-                    break;
-                case "reboot":
-                    apdu = new Uint8Array([ 0x80, 0x1F, 0, 0, 0, 1, 0 ]);
-                    break;
-                case "bootsel":
-                    apdu = new Uint8Array([ 0x80, 0x1F, 1, 0, 0, 1, 0 ]);
-                    break;
-                default:
-                    return;
-            }
-
-            if (apdu) {
-                pk.EnterRescue()
-                .then(_ => pk.XfrBlock(apdu))
-                .then(_ => console.log("PHY Data Sent"))
-                .then(_ => new bootstrap.Toast(elm_web_phy_toast).show());
-            }
+        function onCommissionClick(elem) {
+            pk.Usable()
+            .then(_ => doRescueCommission(elem))
+            .catch(err => {
+                if (err == "Device not usable") {
+                    return doCredentailCommission(elem);
+                }
+            });
         }
-
-        function slideIndicator(event) {
-            var indicator = document.querySelector(`#${event.target.id}_val`);
-            if (indicator) {
-                indicator.textContent = event.target.value;
-            }
-        }
-
-        elm_btn_timeout.addEventListener("input", slideIndicator);
-        elm_led_btness.addEventListener("input", slideIndicator);
-        elm_usb_vendor.addEventListener("change", event => {
-            var data = event.target.value;
-            elm_usb_vidpid.value = data;
-            if (data) {
-                elm_usb_vidpid.disabled = true;
-            } else {
-                elm_usb_vidpid.disabled = false;
-            }
-        });
 
         setTimeout(_ => {
             elm_btn_timeout.dispatchEvent(new Event("input"));
             elm_led_btness.dispatchEvent(new Event("input"));
             elm_usb_vendor.dispatchEvent(new Event("change"));
-            document.querySelectorAll('[data-bs-toggle="popover"]').forEach(elm => {
-                new bootstrap.Popover(elm, {
-                    customClass: "cst-popover",
-                    trigger: "hover focus"
-                });
+        }, 500);
+    </script>
+    <script aria-label="otp_script">
+        /* TKT Flags */
+        const CHAL_YUBICO       = 0x20
+        const CHAL_RESP         = 0x40
+        const OATH_HOTP         = 0x40
+        /* CFG Flags */
+        const SHORT_TICKET      = 0x02
+        const STATIC_TICKET     = 0x20
+        const CHAL_HMAC         = 0x22
+
+        function arrayToModHex(data) {
+            const modhex_tab = [
+                'c', 'b', 'd', 'e', 'f', 'g', 'h', 'i',
+                'j', 'k', 'l', 'n', 'r', 't', 'u', 'v'
+            ];
+            let hex_list = [];
+            for (i = 0; i < data.length; i++) {
+                hex_list.push(modhex_tab[data[i] >> 4]);
+                hex_list.push(modhex_tab[data[i] & 15]);
+            }
+            return hex_list.join('');
+        }
+
+        function clearOtpStatus() {
+            otp_slot_list.forEach(elm => {
+                elm.value = "";
+                elm.dispatchEvent(new Event("change"));
             });
-        }, 100);
+        }
+
+        function onOtpReadClick(elem) {
+            pk.Usable()
+            .then(_ => clearOtpStatus())
+            .then(_ => pk.OTP_ReadStatusExt())
+            .then(resp => showOtpStatus(resp));
+        }
+
+        function onOtpSwapClick(elem) {
+            var s1 = parseInt(elem.dataset.slot);
+            var s2 = parseInt(elem.dataset.swap);
+            console.log(`Swap: ${s1} -> ${s2}`);
+
+            pk.OTP_SwapSlot(s1, s2)
+            .then(_ => clearOtpStatus())
+            .then(_ => pk.OTP_ReadStatusExt())
+            .then(resp => showOtpStatus(resp));
+        }
+
+        function onOtpDeleteClick(elem) {
+            var slot = parseInt(elem.dataset.slot);
+            pk.OTP_DeleteSlot(slot)
+            .then(_ => clearOtpStatus())
+            .then(_ => pk.OTP_ReadStatusExt())
+            .then(resp => showOtpStatus(resp));
+        }
+
+        function showOtpStatus(data) {
+            var data = new Uint8Array(data);
+            var i = 0;
+            while (i < data.length) {
+                var slot_id = data[i++];
+                if (slot_id < 0xB0 || slot_id > 0xB3) {
+                    continue;
+                }
+                slot_id &= 15;
+
+                var slot_len = data[i++];
+                if (data[i] != 0xA0 || data[i + 1] != 2) {
+                    i += slot_len;
+                    continue;
+                }
+                i += 2;
+                slot_len -= 2;
+
+                var tkt_flags = data[i++];
+                var cfg_flags = data[i++];
+                slot_len -= 2;
+
+                if (tkt_flags & CHAL_RESP && cfg_flags < OATH_HOTP && cfg_flags & CHAL_HMAC) {
+                    var cred_type = "Challenge-Response";
+                }
+                else if (tkt_flags & CHAL_RESP && cfg_flags & OATH_HOTP) {
+                    var cred_type = "OATH-HOTP";
+                }
+                else if (cfg_flags & SHORT_TICKET || cfg_flags & STATIC_TICKET) {
+                    var cred_type = "Static Password";
+                }
+                else {
+                    var cred_type = "Yubico OTP";
+                    if (data[i] == 0xC0 && data[i + 1] == 6) {
+                        var serial = data.slice(i + 2, i + 8);
+                        var modhex = arrayToModHex(serial);
+                    }
+                    cred_type += ` (${modhex})`;
+                }
+
+                if (cred_type) {
+                    var slot_elm = otp_slot_list[slot_id];
+                    slot_elm.value = cred_type;
+                    slot_elm.dispatchEvent(new Event("change"));
+                }
+
+                i += slot_len;
+            }
+        }
+
+        document.querySelectorAll(`[id^="otp_slot"]`).forEach(elm => {
+            elm.dispatchEvent(new Event("change"));
+        });
     </script>
 </html>
