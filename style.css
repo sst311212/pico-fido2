@@ -1,0 +1,78 @@
+label {
+    user-select: none;
+}
+.cst-popover {
+    --bs-popover-border-color: var(--bs-pink);
+    --bs-popover-body-padding-x: 1rem;
+    --bs-popover-body-padding-y: .5rem;
+}
+div.dropstart > ul.dropdown-menu {
+    --bs-dropdown-min-width: auto;
+}
+button.nav-link:not(:last-child) {
+    width: 40%;
+}
+button.nav-link:last-child {
+    flex: 1;
+}
+.text-w100p {
+    width: 100px;
+    text-align: end;
+    justify-content: end;
+}
+.flex-w-auto {
+    flex: 1;
+    width: auto;
+}
+.mx-12p {
+    margin: 0 12px 0;
+}
+.ms-12p {
+    margin-left: 12px;
+}
+.me-12p {
+    margin-right: 12px;
+}
+.btn-w120p {
+    width: 120px;
+    height: 3rem;
+}
+:has(#web_usb_status:enabled) .usb-hide,
+:has(#web_usb_status:not(:enabled)) .usb-show {
+    display: none !important;
+}
+:has(#web_phy_status:enabled) .phy-hide,
+:has(#web_phy_status:not(:enabled)) .phy-show {
+    display: none !important;
+}
+.text-w150p {
+    width: 150px;
+    text-align: end;
+    justify-content: end;
+}
+.text-3emc {
+    width: 3em;
+    text-align: center;
+    justify-content: center;
+}
+.gpio-pin {
+    width: 6em !important;
+    flex-grow: 0 !important;
+}
+.btn-w108p {
+    width: 108px;
+}
+.btn-w180p {
+    width: 180px;
+    height: 3rem;
+}
+.otp-slots[data-valid="true"] {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+:has(.otp-slots[id$="1"]:not([data-valid="true"])) .otp-act-1,
+:has(.otp-slots[id$="2"]:not([data-valid="true"])) .otp-act-2,
+:has(.otp-slots[id$="3"]:not([data-valid="true"])) .otp-act-3,
+:has(.otp-slots[id$="4"]:not([data-valid="true"])) .otp-act-4 {
+    display: none;
+}
