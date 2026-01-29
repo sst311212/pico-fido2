@@ -63,6 +63,7 @@ function onDeviceConnect(event) {
 function onDeviceDisconnect(event) {
     if (IsPicokeyDevice(event.device)) {
         if (pk.Equals(event.device)) {
+            pk.Dispose();
             clearDeviceInfo();
         }
         console.log("Picokey disconnected", event.device);
@@ -80,7 +81,14 @@ function requestDevice(event) {
 
 function forgetDevices(event) {
     navigator.usb.getDevices()
-    .then(devices => devices.forEach(dev => dev.forget()))
+    .then(devices => {
+        devices.forEach(async dev => {
+            if (pk.Equals(dev)) {
+                await pk.Dispose()
+                .then(_ => dev.forget());
+            }
+        })
+    })
     .then(_ => location.reload());
 }
 
@@ -99,7 +107,8 @@ async function showDeviceInfo() {
         elm_pico_product.value = json.product;
         elm_pico_version.value = json.version;
         elm_pico_serial.value = json.serial;
-    });
+    })
+    .then(_ => pk.Rescue_SetTime());
 }
 
 function GetPhyConfig() {
@@ -166,10 +175,11 @@ function getConnectivity() {
         elm_usb_status.disabled = false;
         if (!pk.IsOpened || !pk.IsRescued) {
             elm_phy_status.disabled = true;
+            clearDeviceInfo();
         }
         else {
             elm_phy_status.disabled = false;
-            pk.AutoShutdown();
+            pk.AutoPowerOff();
         }
     }
 }
@@ -186,7 +196,6 @@ function clearYKOtpInfo() {
 }
 
 function clearDeviceInfo() {
-    pk.Dispose();
     clearBoardInfo();
     clearYKOtpInfo();
 }
@@ -213,13 +222,6 @@ if (navigator.usb) {
     navigator.usb.addEventListener("connect", onDeviceConnect);
     navigator.usb.addEventListener('disconnect', onDeviceDisconnect);
 }
-
-document.querySelectorAll(`[data-bs-toggle="popover"]`).forEach(elm => {
-    new bootstrap.Popover(elm, {
-        customClass: "cst-popover",
-        trigger: "hover focus"
-    });
-});
 
 setTimeout(_ => {
     elm_usb_vendor.dispatchEvent(changeEvent);

@@ -95,6 +95,7 @@ class Picokey {
 
     async Dispose() {
         return this.Usable()
+        .then(_ => this.IccPowerOff())
         .then(_ => this.#dev.close())
         .catch(_ => null)
         .finally(_ => {
@@ -210,7 +211,7 @@ class Picokey {
             .then(_ => console.log("IccPowerOff Sent"));
     }
 
-    async AutoShutdown() {
+    async AutoPowerOff() {
         if (!this.IsOpened) {
             return;
         }
@@ -233,6 +234,10 @@ class Picokey {
 
     async Rescue_Phy_Reset() {
         return this.#rescue.Phy_Reset();
+    }
+
+    async Rescue_SetTime() {
+        return this.#rescue.SetTime();
     }
 
     async Rescue_Reboot(BOOTSEL = false) {

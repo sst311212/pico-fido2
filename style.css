@@ -1,18 +1,13 @@
 label {
     user-select: none;
 }
-.cst-popover {
-    --bs-popover-border-color: var(--bs-pink);
-    --bs-popover-body-padding-x: 1rem;
-    --bs-popover-body-padding-y: .5rem;
-}
 div.dropstart > ul.dropdown-menu {
     --bs-dropdown-min-width: auto;
 }
-button.nav-link:not(:last-child) {
+.nav-w40p {
     width: 40%;
 }
-button.nav-link:last-child {
+.nav-flex {
     flex: 1;
 }
 .text-w100p {

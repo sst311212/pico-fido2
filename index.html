@@ -3,7 +3,7 @@
     <head>
         <!-- Required meta tags -->
         <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=500, initial-scale=1">
         <title>Pico Commissioner</title>
 
         <!-- Bootstrap -->
@@ -18,9 +18,9 @@
     <body>
         <div class="container" style="width: 500px;">
             <nav class="nav nav-tabs row-cols-auto mt-2" role="tablist">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#nav-usb" role="tab">WebUSB</button>
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#nav-otp" role="tab">OTP</button>
+                <button class="nav-link nav-w40p active" data-bs-toggle="tab" data-bs-target="#nav-usb" role="tab">WebUSB</button>
+                <button class="nav-link nav-w40p" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
+                <button class="nav-link nav-flex" data-bs-toggle="tab" data-bs-target="#nav-otp" role="tab">OTP</button>
             </nav>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="nav-usb" role="tabpanel">
@@ -57,8 +57,7 @@
                 <div class="tab-pane fade" id="nav-phy" role="tabpanel">
                     <div class="input-group mx-0 mt-3">
                         <label class="input-group-text text-w150p" for="phy_usb_vendor">Vendor:</label>
-                        <select class="form-select flex-grow-1" id="phy_usb_vendor" required
-                            data-bs-toggle="popover" data-bs-content="Yubico vendor will not able to use WebUSB">
+                        <select class="form-select flex-grow-1" id="phy_usb_vendor">
                             <option value="" selected>Select a Vendor</option>
                             <option value="2E8A:10FE">Pico FIDO</option>
                             <option value="20A0:4230">NitroHSM</option>
@@ -83,21 +82,24 @@
                     </div>
                     <div class="input-group mx-0 mt-3">
                         <label class="input-group-text text-w150p" for="phy_btn_timeout_set">Button Timeout:</label>
-                        <label class="input-group-text" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="Commission Data">
+                        <label class="input-group-text">
                             <input class="form-check-input mt-0" type="checkbox" id="phy_btn_timeout_set">
                         </label>
-                        <div class="input-group-text flex-grow-1" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="0 - Disable Button Presence">
+                        <div class="input-group-text flex-grow-1">
                             <input class="form-range" type="range" id="phy_btn_timeout" min="0" max="60" value="15">
                         </div>
                         <label class="input-group-text text-3emc" id="phy_btn_timeout_val">15</label>
                     </div>
-                    <div class="input-group mx-0 mt-3">
-                        <label class="input-group-text text-w150p" for="phy_led_gpio">LED GPIO Pin:</label>
-                        <input class="form-control gpio-pin" type="number" id="phy_led_gpio" min="0" max="28">
+                    <div class="d-flex mx-0 mt-3">
+                        <div class="input-group">
+                            <label class="input-group-text text-w150p" for="phy_led_gpio">LED GPIO Pin:</label>
+                            <input class="form-control gpio-pin" type="number" id="phy_led_gpio" min="0" max="28">
+                        </div>
+                        <button class="btn btn-dark text-3emc" data-bs-toggle="modal" data-bs-target="#readmeModal">?</button>
                     </div>
                     <div class="input-group mx-0 mt-3">
                         <label class="input-group-text text-w150p" for="phy_led_btness_set">LED Brightness:</label>
-                        <label class="input-group-text" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="Commission Data">
+                        <label class="input-group-text">
                             <input class="form-check-input mt-0" type="checkbox" id="phy_led_btness_set">
                         </label>
                         <div class="input-group-text flex-grow-1">
@@ -108,7 +110,7 @@
                     <div class="hstack gap-2 mx-0 mt-3">
                         <div class="input-group align-self-start w-auto">
                             <label class="input-group-text text-w150p" for="phy_led_options_set">LED Options:</label>
-                            <div class="input-group-text" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="Commission Data">
+                            <div class="input-group-text">
                                 <input class="form-check-input mt-0" type="checkbox" id="phy_led_options_set">
                             </div>
                         </div>
@@ -121,24 +123,22 @@
                             </div>
                             <div class="btn-group">
                                 <input class="btn-check" type="checkbox" name="phy_options" id="phy_opts_rainbow">
-                                <label class="btn btn-outline-primary btn-w108p" for="phy_opts_rainbow" data-bs-toggle="popover"
-                                    data-bs-placement="bottom" data-bs-content="Only available with my firmware">Rainbow</label>
+                                <label class="btn btn-outline-primary btn-w108p" for="phy_opts_rainbow">Rainbow</label>
                             </div>
                         </div>
                     </div>
                     <div class="hstack gap-2 mx-0 mt-3">
                         <div class="input-group align-self-start w-auto">
                             <label class="input-group-text text-w150p" for="phy_curve_options_set">Enable Curve:</label>
-                            <div class="input-group-text" data-bs-toggle="popover" data-bs-placement="top" data-bs-content="Commission Data">
+                            <div class="input-group-text">
                                 <input class="form-check-input mt-0" type="checkbox" id="phy_curve_options_set">
                             </div>
                         </div>
                         <input class="btn-check" type="checkbox" name="phy_options" id="phy_curve_secp256k1">
-                        <label class="btn btn-outline-warning btn-w108p" for="phy_curve_secp256k1" data-bs-toggle="popover"
-                            data-bs-placement="top" data-bs-content="Not compatible with Android device">secp256k1</label>
+                        <label class="btn btn-outline-warning btn-w108p" for="phy_curve_secp256k1">secp256k1</label>
                     </div>
                     <div class="input-group row mx-0 mt-3">
-                        <label class="input-group-text text-w150p">LED Driver:</label>
+                        <label class="input-group-text text-w150p" for="phy_led_driver">LED Driver:</label>
                         <select class="form-select flex-w-auto" id="phy_led_driver">
                             <option value="" selected>Select a LED Driver</option>
                             <option value="1">Pico</option>
@@ -238,6 +238,69 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="readmeModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content modal-body vstack gap-3">
+                    <div class="nav nav-pills justify-content-center align-items-center gap-2">
+                        <input class="btn-check" type="radio" name="readme-radio" id="readme-radio-0" data-bs-toggle="collapse" data-bs-target="#readme-coll-0">
+                        <label class="btn btn-outline-primary py-1" for="readme-radio-0">
+                            <div class="input-group justify-content-center">
+                                <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" disabled></div>
+                            </div>
+                        </label>
+                        <input class="btn-check" type="radio" name="readme-radio" id="readme-radio-1" data-bs-toggle="collapse" data-bs-target="#readme-coll-1">
+                        <label class="btn btn-outline-primary" for="readme-radio-1">Vendor</label>
+                        <input class="btn-check" type="radio" name="readme-radio" id="readme-radio-2" data-bs-toggle="collapse" data-bs-target="#readme-coll-2">
+                        <label class="btn btn-outline-primary" for="readme-radio-2">Button Timeout</label>
+                        <input class="btn-check" type="radio" name="readme-radio" id="readme-radio-3" data-bs-toggle="collapse" data-bs-target="#readme-coll-3">
+                        <label class="btn btn-outline-primary" for="readme-radio-3">Rainbow</label>
+                        <input class="btn-check" type="radio" name="readme-radio" id="readme-radio-4" data-bs-toggle="collapse" data-bs-target="#readme-coll-4">
+                        <label class="btn btn-outline-primary" for="readme-radio-4">secp256k1</label>
+                        <input class="btn-check" type="radio" name="readme-radio" id="readme-radio-5" data-bs-toggle="collapse" data-bs-target="#readme-coll-5">
+                        <label class="btn btn-outline-primary" for="readme-radio-5">WS2812_Swap</label>
+                        <input class="btn-check" type="radio" name="readme-radio" id="readme-radio-6" data-bs-toggle="collapse" data-bs-target="#readme-coll-6">
+                        <label class="btn btn-outline-primary" for="readme-radio-6">Reset Settings</label>
+                    </div>
+                    <div class="text-center" id="readme-group">
+                        <div class="collapse" id="readme-coll-0" data-bs-parent="#readme-group">
+                            <div class="alert alert-warning">Check this element to use it's option for commission.</div>
+                        </div>
+                        <div class="collapse" id="readme-coll-1" data-bs-parent="#readme-group">
+                            <div class="alert alert-warning">
+                                Yubico's vendor ID has filtered by WebUSB.<br>
+                                If you commission the PHY data with this ID,<br>
+                                It will <code class="fs-5">NOT</code> able to connect via WebUSB after.
+                            </div>
+                        </div>
+                        <div class="collapse" id="readme-coll-2" data-bs-parent="#readme-group">
+                            <div class="alert alert-warning">Setting this <code class="fs-5">0</code> to disable Button Presence.</div>
+                        </div>
+                        <div class="collapse" id="readme-coll-3" data-bs-parent="#readme-group">
+                            <div class="alert alert-warning">
+                                Use rainbow effect for <code class="fs-5">WS2812</code> RGB LED.<br>
+                                Replaced <code class="fs-5">MOUNTED</code> and <code class="fs-5">SUSPENDED</code> led mode.<br>
+                                This feature <code class="fs-5">NOT</code> implemented on official firmware.
+                            </div>
+                        </div>
+                        <div class="collapse" id="readme-coll-4" data-bs-parent="#readme-group">
+                            <div class="alert alert-warning">Android device does not support <code class="fs-5">secp256k1</code> curve.</div>
+                        </div>
+                        <div class="collapse" id="readme-coll-5" data-bs-parent="#readme-group">
+                            <div class="alert alert-warning">
+                                Waveshare board use <code class="fs-5">RGB</code> ordering instead of <code class="fs-5">GRB</code>.<br>
+                                This feature <code class="fs-5">NOT</code> implemented on official firmware.
+                            </div>
+                        </div>
+                        <div class="collapse" id="readme-coll-6" data-bs-parent="#readme-group">
+                            <div class="alert alert-warning">
+                                Send a command to clear PHY data on board.<br>
+                                This feature <code class="fs-5">NOT</code> implemented on official firmware.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="position-fixed bottom-0 end-0 p-3">
             <div class="toast bg-success-subtle" id="web_phy_toast" role="status" aria-live="polite" aria-atomic="true">
                 <div class="d-flex">
@@ -246,8 +309,8 @@
                 </div>
             </div>
         </div>
-        <input type="text" id="web_usb_status" disabled hidden>
-        <input type="text" id="web_phy_status" disabled hidden>
+        <input type="text" id="web_usb_status" hidden>
+        <input type="text" id="web_phy_status" hidden>
     </body>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript" src="./picokey.js"></script>

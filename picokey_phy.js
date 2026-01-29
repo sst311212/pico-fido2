@@ -82,6 +82,16 @@ class Rescue {
         .then(_ => this.#key.XfrBlock([ 0x80, 0x1F, BOOTSEL, 0, 0, 1, 0 ]))
         .then(_ => console.log("Reboot Sent"));
     }
+
+    async SetTime() {
+        let time = Date.now() / 1000;
+        let data = new Uint8Array(4);
+        let view = new DataView(data.buffer);
+        view.setUint32(0, ++time >>> 0);
+        return this.Select()
+        .then(_ => this.#key.XfrBlock([ 0x80, 0x1C, 2, 2, 4, ...data, 0 ]))
+        .then(_ => console.log("Time Data Send"));
+    }
 }
 
 function GetPhyConfigData() {
@@ -96,11 +106,11 @@ function GetPhyConfigData() {
         view.setUint32(p, config.vidpid);
         p += 4;
     }
-    if (config.led_gpio) {
+    if (config.led_gpio != undefined) {
         data.set(new Uint8Array([ PHY_LED_GPIO, 1, config.led_gpio ]), p);
         p += 3;
     }
-    if (config.led_btness) {
+    if (config.led_btness != undefined) {
         data.set(new Uint8Array([ PHY_LED_BTNESS, 1, config.led_btness ]), p);
         p += 3;
     }
@@ -112,7 +122,7 @@ function GetPhyConfigData() {
         data.set(new Uint8Array([ PHY_OPTS, 2, opt >> 8, opt & 255 ]), p);
         p += 4;
     }
-    if (config.up_btn) {
+    if (config.up_btn != undefined) {
         data.set(new Uint8Array([ PHY_UP_BTN, 1, config.up_btn ]), p);
         p += 3;
     }
@@ -122,7 +132,7 @@ function GetPhyConfigData() {
         data.set(new Uint8Array([ PHY_USB_PRODUCT, buff.length, ...buff ]), p);
         p += buff.length + 2;
     }
-    if (config.curve) {
+    if (config.curve != undefined) {
         var curve = (config.curve.secp256k1 ? PHY_CURVE_SECP256K1 : 0);
         data.set(new Uint8Array([ PHY_ENABLED_CURVES, 4, 0, 0, 0, curve ]), p);
         p += 6;
