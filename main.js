@@ -276,6 +276,8 @@ function getConnectivity() {
     if (!navigator.usb) {
         // No WebUSB ability
         elm_usb_status.disabled = true;
+        elm_phy_status.disabled = true;
+        elm_fido_status.disabled = true;
         clearInterval(tim_connectivity);
     }
     else {
