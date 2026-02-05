@@ -16,17 +16,18 @@ class YubiOTP {
     }
 
     async Select() {
-        if (this.#key.Select == this) {
+        if (this.#key.Select instanceof YubiOTP) {
             return this.#data;
         }
         const aid = [ 0xA0, 0x00, 0x00, 0x05, 0x27, 0x20, 0x01 ];
         const apdu = [ 0x00, 0xA4, 0x04, 0x04, aid.length, ...aid, 0x00 ];
-        return this.#key.IccPowerOn()
+        return this.#key.IccPowerOff()
+            .then(_ => this.#key.IccPowerOn())
             .then(_ => this.#key.XfrBlock(apdu))
             .then(resp => {
                 this.#key.Select = this;
-                this.#data = new Uint8Array(resp);
-                console.log("Selected OTP Applet");
+                this.#data = ToBytes(resp);
+                Logger(1, "Selected OTP Applet");
                 return resp;
             });
     }
@@ -35,7 +36,7 @@ class YubiOTP {
         return this.Select()
         .then(_ => this.#key.XfrBlock([ 0x00, 0x01, 0x14, 0, 0, 1, 0 ]))
         .then(resp => {
-            console.log("OTP Extent Status Read");
+            Logger(1, "OTP ExtStatus Read");
             return resp;
         });
     }
@@ -47,21 +48,21 @@ class YubiOTP {
             [ [0,1], [1,1], [-1,-1], [2,2] ],
             [ [0,2], [1,2], [2,2], [-1,-1] ],
         ];
-        var st = st_map[(from >>> 0) - 1][(to >>> 0) - 1];
+        let st = st_map[from - 1][to - 1];
         
         return this.Select()
-        .then(_ => this.#key.XfrBlock([ 0x00, 0x01, 0x06, 0, 2, st[0], st[1], 2 ]))
-        .then(_ => console.log("OTP Slot Swapped"));
+        .then(_ => this.#key.XfrBlock([ 0x00, 0x01, 0x06, 0, 2, ...st, 2 ]))    // Ne must be 2
+        .then(_ => Logger(1, "OTP Slot Swapped"));
     }
 
     async DeleteSlot(slot) {
         const st_map = [ [1,0], [3,0], [1,2], [1,3] ];
-        var otp_config = new Uint8Array(52);
-        var [st1, st2] = st_map[(slot >>> 0) - 1];
+        let otp_config = new Uint8Array(52);
+        let [ p1, p2 ] = st_map[slot - 1];
 
         return this.Select()
-        .then(_ => this.#key.XfrBlock([ 0x00, 0x01, st1, st2, otp_config.length, ...otp_config, 0 ]))
-        .then(_ => console.log("OTP Slot Deleted"));
+        .then(_ => this.#key.XfrBlock([ 0x00, 0x01, p1, p2, otp_config.length, ...otp_config, 0 ]))
+        .then(_ => Logger(1, "OTP Slot Deleted"));
     }
 }
 
@@ -82,44 +83,46 @@ function onOtpReadExtClick(elem) {
     pk.Usable()
     .then(_ => clearYKOtpInfo())
     .then(_ => pk.OTP_ReadExt())
-    .then(resp => showYKOtpInfo(resp));
+    .then(resp => showYKOtpInfo(resp))
+    .catch(e => alertMessage(e.message, true));
 }
 
 function onOtpSwapClick(elem) {
-    var swap = elem.dataset.swap;
-    if (!swap || swap[1] != ',') {
-        return;
-    }
-    var [s1, s2] = swap.split(',');
-    console.log(`Swap: ${s1} -> ${s2}`);
-    pk.OTP_SwapSlot(s1, s2)
+    let swap = elem.dataset.swap;
+    if (!swap || swap[1] != ',') return;
+
+    let [ s1, s2 ] = swap.split(',');
+    Logger(2, `Swap: ${s1} -> ${s2}`);
+
+    pk.OTP_SwapSlot(s1 >>> 0, s2 >>> 0)
     .then(_ => clearYKOtpInfo())
     .then(_ => pk.OTP_ReadExt())
-    .then(resp => showYKOtpInfo(resp));
+    .then(resp => showYKOtpInfo(resp))
+    .catch(e => alertMessage(e.message, true));
 }
 
 function onOtpDeleteClick(elem) {
-    var slot = parseInt(elem.dataset.slot);
-    if (!slot || slot < 1 || slot > 4) {
-        return;
-    }
+    let slot = parseInt(elem.dataset.slot);
+    if (!slot || slot < 1 || slot > 4) return;
+
     pk.OTP_DeleteSlot(slot)
     .then(_ => clearYKOtpInfo())
     .then(_ => pk.OTP_ReadExt())
-    .then(resp => showYKOtpInfo(resp));
+    .then(resp => showYKOtpInfo(resp))
+    .catch(e => alertMessage(e.message, true));
 }
 
 function showYKOtpInfo(data) {
-    var data = new Uint8Array(data);
-    var i = 0;
+    let i = 0;
+    data = ToBytes(data);
     while (i < data.length) {
-        var slot_id = data[i++];
+        let slot_id = data[i++];
         if (slot_id < 0xB0 || slot_id > 0xB3) {
             continue;
         }
         slot_id &= 15;
 
-        var slot_len = data[i++];
+        let slot_len = data[i++];
         if (data[i] != 0xA0 || data[i + 1] != 2) {
             i += slot_len;
             continue;
@@ -127,9 +130,15 @@ function showYKOtpInfo(data) {
         i += 2;
         slot_len -= 2;
 
-        var tkt_flags = data[i++];
-        var cfg_flags = data[i++];
+        let tkt_flags = data[i++];
+        let cfg_flags = data[i++];
         slot_len -= 2;
+
+        Logger(4, "Slot Status: ", {
+            slot: slot_id,
+            tkt_flags,
+            cfg_flags
+        });
 
         if (tkt_flags & CHAL_RESP && cfg_flags < OATH_HOTP && cfg_flags & CHAL_HMAC) {
             var cred_type = "Challenge-Response";
@@ -141,16 +150,16 @@ function showYKOtpInfo(data) {
             var cred_type = "Static Password";
         }
         else {
-            var cred_type = "Yubico OTP";
+            var cred_type = "Unknown";
             if (data[i] == 0xC0 && data[i + 1] == 6) {
-                var serial = data.slice(i + 2, i + 8);
-                var modhex = arrayToModHex(serial);
+                let serial = data.slice(i + 2, i + 8);
+                let modhex = arrayToModHex(serial);
+                cred_type = `Yubico OTP (${modhex})`;
             }
-            cred_type += ` (${modhex})`;
         }
 
         if (cred_type) {
-            var slot_elm = elm_otp_slotlist[slot_id];
+            let slot_elm = elm_otp_slotlist[slot_id];
             slot_elm.dataset.valid = true;
             slot_elm.value = cred_type;
         }

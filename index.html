@@ -8,6 +8,11 @@
 
         <!-- Bootstrap -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"></script>
+
+        <!-- AES Cipher (NoPadding) -->
+        <script src="https://cdn.jsdelivr.net/gh/ricmoo/aes-js@master/index.js"></script>
 
         <!-- Custom Style -->
         <link href="./style.css" rel="stylesheet">
@@ -18,9 +23,10 @@
     <body>
         <div class="container" style="width: 500px;">
             <nav class="nav nav-tabs row-cols-auto mt-2" role="tablist">
-                <button class="nav-link nav-w40p active" data-bs-toggle="tab" data-bs-target="#nav-usb" role="tab">WebUSB</button>
-                <button class="nav-link nav-w40p" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
-                <button class="nav-link nav-flex" data-bs-toggle="tab" data-bs-target="#nav-otp" role="tab">OTP</button>
+                <button class="nav-link col-4 active" data-bs-toggle="tab" data-bs-target="#nav-usb" role="tab">WebUSB</button>
+                <button class="nav-link col-4" data-bs-toggle="tab" data-bs-target="#nav-phy" role="tab">PHY</button>
+                <button class="nav-link col-2" data-bs-toggle="tab" data-bs-target="#nav-otp" role="tab">OTP</button>
+                <button class="nav-link col-2" data-bs-toggle="tab" data-bs-target="#nav-cred" role="tab">KEY</button>
             </nav>
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="nav-usb" role="tabpanel">
@@ -236,6 +242,66 @@
                         </label>
                     </div>
                 </div>
+                <div class="tab-pane fade" id="nav-cred" role="tabpanel">
+                    <div class="input-group mx-0 mt-3">
+                        <label class="input-group-text" for="fido_pin">PIN</label>
+                        <input class="form-control" type="password" id="fido_pin" minlength="4" maxlength="63" required>
+                        <label class="input-group-text text-3emc" id="fido_pin_retries"></label>
+                    </div>
+                    <div class="row row-cols-2 mt-2 phy-show">
+                        <div>
+                            <button class="btn btn-outline-primary w-100" onclick="GetFido2Info(this)">Get Infomations</button>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-warning w-100 fido-show" onclick="GetPassKeys(this)">Get Credentials</button>
+                        </div>
+                    </div>
+                    <div class="card text-bg-light mt-3" id="cred_info" hidden>
+                        <h6 class="card-header user-select-none">Passkeys</h6>
+                        <div class="list-group list-group-flush overflow-auto" style="max-height: 300px;" id="cred_group">
+                            <div class="row row-cols-auto border mx-0" id="cred_template" hidden>
+                                <div class="card list-group-item list-group-item-action border-0
+                                    rounded-1 flex-fill w-auto py-1" id="cred_item" data-bs-toggle="list">
+                                    <p class="card-title user-select-none mb-1"></p>
+                                    <p class="card-subtitle user-select-none ms-2" style="font-size: smaller;"></p>
+                                </div>
+                                <div class="p-2 bg-body">
+                                    <button class="btn btn-danger border-danger-subtle h-100" onclick="DeletePasskey(this)">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card text-bg-light mt-1" id="cred_details" hidden>
+                        <h6 class="card-header user-select-none">Details</h6>
+                        <ul class="list-group list-group-flush">
+                            <div class="card list-group-item py-1">
+                                <p class="card-title user-select-none mb-1" style="font-size: smaller;">RP ID</p>
+                                <p class="card-subtitle font-monospace lh-sm" style="font-size: .8em;"></p>
+                            </div>
+                            <div class="card list-group-item py-1">
+                                <p class="card-title user-select-none mb-1" style="font-size: smaller;">Display Name</p>
+                                <p class="card-subtitle font-monospace lh-sm" style="font-size: .8em;"></p>
+                            </div>
+                            <div class="card list-group-item py-1">
+                                <p class="card-title user-select-none mb-1" style="font-size: smaller;">User Name</p>
+                                <p class="card-subtitle font-monospace lh-sm" style="font-size: .8em;"></p>
+                            </div>
+                            <div class="card list-group-item py-1">
+                                <p class="card-title user-select-none mb-1" style="font-size: smaller;">User ID</p>
+                                <p class="card-subtitle font-monospace lh-sm" style="font-size: .8em;"></p>
+                            </div>
+                            <div class="card list-group-item py-1">
+                                <p class="card-title user-select-none mb-1" style="font-size: smaller;">Credential ID</p>
+                                <p class="card-subtitle font-monospace lh-sm" style="font-size: .8em;"></p>
+                            </div>
+                        </ul>
+                    </div>
+                    <div class="d-flex justify-content-center mt-4 phy-hide">
+                        <label class="alert alert-warning text-center w-100" id="web_cred_alert" role="alert">
+                            Need WebUSB for Credentials configuration
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="modal fade" id="readmeModal" tabindex="-1">
@@ -301,20 +367,50 @@
                 </div>
             </div>
         </div>
-        <div class="position-fixed bottom-0 end-0 p-3">
-            <div class="toast bg-success-subtle" id="web_phy_toast" role="status" aria-live="polite" aria-atomic="true">
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div class="toast bg-success-subtle" id="web_msg_toast1">
                 <div class="d-flex">
                     <label class="toast-body">Commission Succeeded</label>
-                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    <button class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+            <div class="toast bg-danger-subtle" id="web_msg_toast2">
+                <div class="d-flex">
+                    <label class="toast-body">Commission Failed</label>
+                    <button class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
                 </div>
             </div>
         </div>
-        <input type="text" id="web_usb_status" hidden>
-        <input type="text" id="web_phy_status" hidden>
+        <input class="d-none" type="text" id="web_usb_status" hidden>
+        <input class="d-none" type="text" id="web_phy_status" hidden>
+        <input class="d-none" type="text" id="web_fido_status" disabled hidden>
     </body>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" src="./picokey.js"></script>
-    <script type="text/javascript" src="./picokey_phy.js"></script>
-    <script type="text/javascript" src="./picokey_otp.js"></script>
-    <script type="text/javascript" src="./main.js"></script>
+    <script src="./main.js"></script>
+    <script src="./picokey.js"></script>
+    <script src="./picokey_phy.js"></script>
+    <script src="./picokey_otp.js"></script>
+    <script src="./picokey_fido.js"></script>
+    <script src="./cbor_mod.js"></script>
+    <script>
+        // 0 = Silent | 1 = Normal | 3 = Debug | 7 = Verbose
+        this.logLevel = 1;
+        this.debugMode = false;
+
+        // Picokey
+        this.pk = new Picokey();
+        
+        // for page reload
+        if (navigator.usb) {
+            pk?.Usable()
+            .catch(_ => navigator.usb.getDevices()
+                .then(devices => devices.forEach(
+                        async dev => await createPicokey(dev)
+                    )
+                )
+            );
+        }
+
+        // Intervals
+        this.tim_connectivity = setInterval(getConnectivity, 100);
+    </script>
 </html>

@@ -29,17 +29,18 @@ class Rescue {
     }
 
     async Select() {
-        if (this.#key.Select == this) {
+        if (this.#key.Select instanceof Rescue) {
             return this.#data;
         }
         const aid = [ 0xA0, 0x58, 0x3F, 0xC1, 0x9B, 0x7E, 0x4F, 0x21 ];
         const apdu = [ 0x00, 0xA4, 0x04, 0x04, aid.length, ...aid, 0x00 ];
-        return this.#key.IccPowerOn()
+        return this.#key.IccPowerOff()
+            .then(_ => this.#key.IccPowerOn())
             .then(_ => this.#key.XfrBlock(apdu))
             .then(resp => {
                 this.#key.Select = this;
-                this.#data = new Uint8Array(resp);
-                console.log("Selected Rescue Applet");
+                this.#data = ToBytes(resp);
+                Logger(1, "Selected Rescue Applet");
                 return resp;
             });
     }
@@ -68,77 +69,129 @@ class Rescue {
     async Phy_Write(data) {
         return this.Select()
         .then(_ => this.#key.XfrBlock([ 0x80, 0x1C, 1, 0, data.length, ...data, 0 ]))
-        .then(_ => console.log("PHY Data Written"));
+        .then(_ => Logger(1, "PHY Data Written"));
     }
 
     async Phy_Reset() {
         return this.Select()
         .then(_ => this.#key.XfrBlock([ 0x80, 0x1C, 1, 0xFF, 2, 0, 0, 0 ]))
-        .then(_ => console.log("PHY Data Reset"));
+        .then(_ => Logger(1, "PHY Data Reset"));
     }
 
     async Reboot(BOOTSEL = 0) {
         return this.Select()
         .then(_ => this.#key.XfrBlock([ 0x80, 0x1F, BOOTSEL, 0, 0, 1, 0 ]))
-        .then(_ => console.log("Reboot Sent"));
+        .then(_ => Logger(1, "Reboot Sent"));
+    }
+
+    async GetTime() {
+        return this.Select()
+        .then(_ => this.#key.XfrBlock([ 0x80, 0x1E, 4, 2, 0, 1, 0 ]))
+        .then(resp => Date(resp.toUint32(0)))
+        .then(date => Logger(1, date))
+        .then(_ => Logger(1, "Time Data Read"));
     }
 
     async SetTime() {
-        let time = Date.now() / 1000;
-        let data = new Uint8Array(4);
-        let view = new DataView(data.buffer);
-        view.setUint32(0, ++time >>> 0);
+        let time = (Date.now() + 500) / 1000;
+        let data = ToBytes(time >>> 0);
+
         return this.Select()
         .then(_ => this.#key.XfrBlock([ 0x80, 0x1C, 2, 2, 4, ...data, 0 ]))
-        .then(_ => console.log("Time Data Send"));
+        .then(_ => Logger(1, "Time Data Sent"));
     }
 }
 
-function GetPhyConfigData() {
+function GetPhyConfig() {
+    let config = {};
+    let vidpid = String(elm_usb_vidpid.value);
+    let gpio = parseInt(elm_led_gpio.value);
+    let btness = parseInt(elm_led_btness.value);
+    let btness_set = Boolean(elm_led_btness_set.checked);
+    let dimm = Boolean(elm_opts_dimm.checked);
+    let steady = Boolean(elm_opts_steady.checked);
+    let rainbow = Boolean(elm_opts_rainbow.checked);
+    let led_opt_set = Boolean(elm_led_options_set.checked);
+    let up_btn = parseInt(elm_btn_timeout.value);
+    let up_btn_set = Boolean(elm_btn_timeout_set.checked);
+    let product = String(elm_usb_product.value);
+    let secp256k1 = Boolean(elm_curve_secp256k1.checked);
+    let curve_set = Boolean(elm_curve_options_set.checked);
+    let driver = parseInt(elm_led_driver.value);
+
+    vidpid = vidpid.replace(':', '');
+    if (vidpid.length == 8) {
+        config["vidpid"] = Uint8Array.fromHex(vidpid);
+    }
+    if (gpio >= 0 && gpio <= 29) {
+        config["led_gpio"] = gpio;
+    }
+    if (btness_set && btness >= 0 && btness <= 15) {
+        config["led_btness"] = btness;
+    }
+    if (led_opt_set) {
+        config["opts"] = { dimm, steady, rainbow };
+    }
+    if (up_btn_set && up_btn >= 0 && up_btn <= 60) {
+        config["up_btn"] = up_btn;
+    }
+    if (product) {
+        config["product"] = product + '\0';
+    }
+    if (curve_set) {
+        config["curve"] = { secp256k1 };
+    }
+    if (driver) {
+        config["driver"] = driver;
+    }
+
+    return config;
+}
+
+async function GetPhyConfigData() {
     let p = 0;
     let data = new Uint8Array(256);
-    let view = new DataView(data.buffer);
     let config = GetPhyConfig();
+    Logger(1, "PHY Config:", config);
 
     if (config.vidpid) {
         data[p++] = PHY_VIDPID;
         data[p++] = 4;
-        view.setUint32(p, config.vidpid);
+        data.set(config.vidpid, p);
         p += 4;
     }
     if (config.led_gpio != undefined) {
-        data.set(new Uint8Array([ PHY_LED_GPIO, 1, config.led_gpio ]), p);
+        data.set(ToBytes([ PHY_LED_GPIO, 1, config.led_gpio ]), p);
         p += 3;
     }
     if (config.led_btness != undefined) {
-        data.set(new Uint8Array([ PHY_LED_BTNESS, 1, config.led_btness ]), p);
+        data.set(ToBytes([ PHY_LED_BTNESS, 1, config.led_btness ]), p);
         p += 3;
     }
     if (config.opts) {
-        var opt = 0;
+        let opt = 0;
         opt |= (config.opts.dimm ? PHY_OPT_DIMM : 0);
         opt |= (config.opts.steady ? PHY_OPT_LED_STEADY : 0);
         opt |= (config.opts.rainbow ? PHY_OPT_LED_RAINBOW : 0);
-        data.set(new Uint8Array([ PHY_OPTS, 2, opt >> 8, opt & 255 ]), p);
+        data.set(ToBytes([ PHY_OPTS, 2, opt >> 8, opt & 255 ]), p);
         p += 4;
     }
     if (config.up_btn != undefined) {
-        data.set(new Uint8Array([ PHY_UP_BTN, 1, config.up_btn ]), p);
+        data.set(ToBytes([ PHY_UP_BTN, 1, config.up_btn ]), p);
         p += 3;
     }
     if (config.product) {
-        var buff = [ ...config.product, '\0' ];
-        buff = buff.map(elm => elm.charCodeAt(0));
-        data.set(new Uint8Array([ PHY_USB_PRODUCT, buff.length, ...buff ]), p);
+        let buff = config.product.toBytes();
+        data.set(ToBytes([ PHY_USB_PRODUCT, buff.length, ...buff ]), p);
         p += buff.length + 2;
     }
     if (config.curve != undefined) {
-        var curve = (config.curve.secp256k1 ? PHY_CURVE_SECP256K1 : 0);
-        data.set(new Uint8Array([ PHY_ENABLED_CURVES, 4, 0, 0, 0, curve ]), p);
+        let curve = (config.curve.secp256k1 ? PHY_CURVE_SECP256K1 : 0);
+        data.set(ToBytes([ PHY_ENABLED_CURVES, 4, 0, 0, 0, curve ]), p);
         p += 6;
     }
     if (config.driver) {
-        data.set(new Uint8Array([ PHY_LED_DRIVER, 1, config.driver ]), p);
+        data.set(ToBytes([ PHY_LED_DRIVER, 1, config.driver ]), p);
         p += 3;
     }
     if (p < 3) {
@@ -146,7 +199,7 @@ function GetPhyConfigData() {
     }
 
     data = data.slice(0, p);
-    console.log(`PHY Data: ${arrayToHexDump(data)}`);
+    Logger(2, "PHY Data:", arrayToHexDump(data));
 
     return data;
 }
@@ -154,7 +207,8 @@ function GetPhyConfigData() {
 async function doRescueCommission(elem) {
     switch (elem.value) {
         case "apply":
-            return pk.Rescue_Phy_Write(GetPhyConfigData());
+            let data = await GetPhyConfigData();
+            return pk.Rescue_Phy_Write(data);
         case "reset":
             return pk.Rescue_Phy_Reset();
         case "reboot":
@@ -167,11 +221,13 @@ async function doRescueCommission(elem) {
 }
 
 async function doCredentailCommission(elem) {
-    const challenge = new Uint8Array(32);
-    window.crypto.getRandomValues(challenge);
+    const challenge = new Uint8Array(16);
+    crypto.getRandomValues(challenge);
 
-    var pkeyCredCreateOptions = {
-        authenticatorSelection: { authenticatorAttachment: "cross-platform" },
+    let pkeyCredCreateOptions = {
+        authenticatorSelection: {
+            authenticatorAttachment: "cross-platform"
+        },
         challenge,
         hints: [ "security-key" ],
         pubKeyCredParams: [
@@ -180,14 +236,14 @@ async function doCredentailCommission(elem) {
         ],
         rp: { name: "阿皇仔" },
         user: {
-            id: new Uint8Array(8),
+            id: ToBytes("picokeys"),
             name: "+picoCommissionProfile",
             displayName: "阿皇仔"
         }
     };
 
     if (elem.value == "apply") {
-        pkeyCredCreateOptions.user.id = GetPhyConfigData();
+        pkeyCredCreateOptions.user.id = await GetPhyConfigData();
     }
     else if (elem.value == "reset") {
         pkeyCredCreateOptions.user.name = "+picoResetProfile";
@@ -196,17 +252,34 @@ async function doCredentailCommission(elem) {
         throw new Error("Invalid commission command");
     }
 
+    Logger(2, "Create Credentials Options:", pkeyCredCreateOptions);
     return navigator.credentials.create({ publicKey: pkeyCredCreateOptions });
 }
 
 async function onCommissionClick(elem) {
-    return pk.Usable()
+    return pk?.Usable()
     .then(_ => doRescueCommission(elem))
-    .catch(err => {
-        if (err.message == "USB device not usable") {
+    .catch(e => {
+        if (e.message == "USB device not usable") {
             return doCredentailCommission(elem);
         }
-        throw err;
+        throw e;
     })
-    .then(_ => elm_phy_toast.show());
+    .then(_ => alertMessage("Commission Succeeded"))
+    .catch(e => alertMessage(e.message, true));
 }
+
+function showInputRangeValue(event) {
+    let elem = document.querySelector(`#${event.target.id}_val`);
+    elem && (elem.textContent = event.target.value);
+}
+
+// Disable custom VID/PID input
+elm_usb_vendor.addEventListener("change", event => {
+    elm_usb_vidpid.value = event.target.value;
+    elm_usb_vidpid.disabled = !(!event.target.value);
+});
+
+elm_phy_rangelist.forEach(elm => {
+    elm.addEventListener("input", showInputRangeValue);
+});

@@ -1,3 +1,7 @@
+const USB_BUFFER_SIZE = 2048;
+const ICCD_XFRBLOCK_SIZE = 10;
+const APDU_DATA_SIZE = USB_BUFFER_SIZE - ICCD_XFRBLOCK_SIZE;
+
 class Picokey {
     #dev = undefined;
     #itf = undefined;
@@ -11,18 +15,17 @@ class Picokey {
     #select = undefined;
     #rescue = undefined;
     #ykotp = undefined;
-    #last_ts = 0;
+    #fido2 = undefined;
+    #lastTs = 0;
 
     async Initialize(dev) {
         let vendor = GetVendorInterface(dev);
         if (vendor && Array.isArray(vendor)) {
-            this.#itf = vendor[0];
-            this.#epi = vendor[1];
-            this.#epo = vendor[2];
+            [ this.#itf, this.#epi, this.#epo ] = vendor;
         }
 
         if (this.#itf && this.#epi && this.#epo) {
-            return await dev.open()
+            return await dev?.open()
             .then(_ => dev.selectConfiguration(1))
             .then(_ => dev.claimInterface(this.#itf.interfaceNumber))
             .then(_ => {
@@ -30,7 +33,8 @@ class Picokey {
                 this.#init = true;
                 this.#rescue = new Rescue(this);
                 this.#ykotp = new YubiOTP(this);
-                console.log(`${dev.productName} Initialized`);
+                this.#fido2 = new FIDO2(this);
+                Logger(1, `${dev.productName} Initialized`);
                 return true;
             });
         }
@@ -53,7 +57,7 @@ class Picokey {
     }
 
     get IsRescued() {
-        if (this.#rescue && this.#rescue.Data) {
+        if (this.IsOpened && this.#rescue && this.#rescue.Data) {
             return true;
         }
         return false;
@@ -67,19 +71,20 @@ class Picokey {
         this.#select = obj;
     }
 
-    get LastTime() {
-        return this.#last_ts;
-    }
-
-    set LastTime(obj) {
-        this.#last_ts = obj;
-    }
-
     get Elapsed() {
-        if (!this.Select || !this.LastTime) {
+        if (!this.Select || !this.#lastTs) {
             return 0;
         }
-        return ((Date.now() - this.LastTime) / 1000) >>> 0;
+        return ((Date.now() - this.#lastTs) / 1000) >>> 0;
+    }
+
+    get FIDO2Ready() {
+        if (!this.#fido2) return false;
+        return this.#fido2.IsReady;
+    }
+
+    get FIDO2() {
+        return this.#fido2;
     }
 
     Equals(dev) {
@@ -87,9 +92,7 @@ class Picokey {
         else if (this.#dev.vendorId != dev.vendorId) {}
         else if (this.#dev.productId != dev.productId) {}
         else if (this.#dev.serialNumber != dev.serialNumber) {}
-        else {
-            return true;
-        }
+        else { return true; }
         return false;
     }
 
@@ -97,14 +100,15 @@ class Picokey {
         return this.Usable()
         .then(_ => this.IccPowerOff())
         .then(_ => this.#dev.close())
-        .catch(_ => null)
+        .catch(_ => _)
         .finally(_ => {
             this.#dev = this.#itf = undefined;
             this.#epi = this.#epo = 0;
             this.#bSlot = this.#bSeq = 0;
             this.#init =  this.#locked = this.#active = false;
-            this.#select = this.#rescue = this.#ykotp = undefined;
-            this.#last_ts = 0;
+            this.#select = this.#rescue = undefined;
+            this.#ykotp = this.#fido2 = undefined;
+            this.#lastTs = 0;
         });
     }
 
@@ -134,11 +138,11 @@ class Picokey {
     async Send(data) {
         return this.Usable()
             .then(_ => this.Locked(true))
-            .then(_ => this.#dev.transferOut(this.#epo, new Uint8Array(data)))
+            .then(_ => this.#dev.transferOut(this.#epo, ToBytes(data)))
             .then(result => this.Locked(false, result))
             .then(async result => {
                 if (result.status == "ok") {
-                    console.log(`Send: ${arrayToHexDump(data)}`);
+                    Logger(4, "Send:", arrayToHexDump(data));
                 } else {
                     await this.#dev.clearHalt("out", this.#epo);
                     throw new Error("Send Data Error");
@@ -149,16 +153,16 @@ class Picokey {
     async Recv() {
         return this.Usable()
             .then(_ => this.Locked(true))
-            .then(_ => this.#dev.transferIn(this.#epi, 2048))
+            .then(_ => this.#dev.transferIn(this.#epi, USB_BUFFER_SIZE))
             .then(result => this.Locked(false, result))
             .then(async result => {
                 if (result.status == "ok") {
-                    var data = new Uint8Array(result.data.buffer);
-                    console.log(`Recv: ${arrayToHexDump(data)}`);
+                    let data = ToBytes(result.data);
+                    Logger(4, "Recv:", arrayToHexDump(data));
                     return data;
                 } else {
                     await this.#dev.clearHalt("in", this.#epi);
-                    throw new Error("Send Data Error");
+                    throw new Error("Recv Data Error");
                 }
             });
     }
@@ -174,24 +178,28 @@ class Picokey {
                     throw new Error("bStatus error");
                 }
                 if (resp[9] != 0) {
-                    throw new Error("Extended APDU");
+                    throw new Error("Unsupport continue block");
                 }
+                this.#lastTs = Date.now();
                 this.#active = !(resp[7] & 0b11) ? true : false;
                 this.#select = !this.#active ? undefined : this.#select;
-                this.#last_ts = Date.now();
                 this.#bSeq = this.#bSeq == 255 ? 0 : this.#bSeq + 1;
-                var dwLength = new DataView(resp.buffer).getUint32(1, true);
+                let dwLength = resp.toUint32(1, true);
                 return resp.slice(-dwLength);
             });
     }
 
     async XfrBlock(apdu) {
-        var data = new Uint8Array([ 0x6F, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0, ...apdu ]);
-        new DataView(data.buffer).setUint32(1, apdu.length, true);
+        if (apdu.length > APDU_DATA_SIZE) {
+            throw new Error("APDU length too large");
+        }
+        let data = ToBytes([
+            0x6F, ...ToBytes(apdu.length, true),
+            this.#bSlot, this.#bSeq, 0, 0, 0, ...apdu
+        ]);
         return this.Transfer(data)
             .then(resp => {
-                var sw = new DataView(resp.buffer.slice(-2)).getUint16(0);
-                if (sw != 0x9000) {
+                if (resp.toUint16(-2) != 0x9000) {
                     throw new Error("SW code invalid");
                 }
                 return resp.slice(0, -2);
@@ -199,22 +207,19 @@ class Picokey {
     }
 
     async IccPowerOn() {
-        if (this.#active) {
-            return;
-        }
+        if (this.#active) return;
         return this.Transfer([ 0x62, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 1, 0, 0 ])
-            .then(_ => console.log("IccPowerOn Sent"));
+            .then(_ => Logger(1, "IccPowerOn Sent"));
     }
 
     async IccPowerOff() {
+        if (this.#select == undefined) return;
         return this.Transfer([ 0x63, 0, 0, 0, 0, this.#bSlot, this.#bSeq, 0, 0, 0 ])
-            .then(_ => console.log("IccPowerOff Sent"));
+            .then(_ => Logger(1, "IccPowerOff Sent"));
     }
 
     async AutoPowerOff() {
-        if (!this.IsOpened) {
-            return;
-        }
+        if (!this.IsOpened) return;
         if (this.Elapsed > 30) {
             pk.IccPowerOff();
         }
@@ -234,6 +239,10 @@ class Picokey {
 
     async Rescue_Phy_Reset() {
         return this.#rescue.Phy_Reset();
+    }
+
+    async Rescue_GetTime() {
+        return this.#rescue.GetTime();
     }
 
     async Rescue_SetTime() {
@@ -259,10 +268,27 @@ class Picokey {
     async OTP_DeleteSlot(slot) {
         return this.#ykotp.DeleteSlot(slot);
     }
-}
 
-// Picokey
-const pk = new Picokey();
+    async SelectFIDO2() {
+        return this.#fido2.Select();
+    }
+
+    async FIDO2_GetInfo() {
+        return this.#fido2.GetInfo();
+    }
+
+    async FIDO2_GetPIN_Retries() {
+        return this.#fido2.GetPIN_Retries();
+    }
+
+    async FIDO2_GetCreds(pin, rp_id = null) {
+        return this.#fido2.GetCredentials(pin, rp_id);
+    }
+
+    async FIDO2_DeleteCred(pin, cred_id) {
+        return this.#fido2.DeleteCredential(pin, cred_id);
+    }
+}
 
 function IsPicokeyDevice(dev) {
     let vidpid = (dev.vendorId << 16) || dev.productId;
@@ -272,15 +298,14 @@ function IsPicokeyDevice(dev) {
     else if (vidpid & 0x20A0_4100 == 0x20A0_4100) {}
     else if (vidpid & 0x20A0_4210 == 0x20A0_4210) {}
     else if (vidpid & 0x20A0_42B0 == 0x20A0_42B0) {}
+    // Yubikey Series is blocked, no need list
     //  Gnuk
     else if (vidpid == 0x234B_0000) {}
     //  GnuPG
     else if (vidpid == 0x1209_2440) {}
     //  Dummy
     else if (vidpid == 0xFEFF_FCFD) {}
-    else {
-        return false;
-    }
+    else { return false; }
     return true;
 }
 
@@ -306,26 +331,4 @@ function GetVendorInterface(dev) {
     if (_itf && _epi && _epo) {
         return [ _itf, _epi, _epo ];
     }
-}
-
-function arrayToHexDump(data) {
-    var list = [];
-    var data = new Uint8Array(data);
-    data.forEach(elm => {
-        elm = elm.toString(16);
-        elm = elm.toUpperCase();
-        elm = elm.padStart(2, '0');
-        list.push(elm);
-    });
-    return list.join(" ");
-}
-
-function hexDumpToArray(data) {
-    var list = []
-    data = data.replaceAll(' ', '');
-    data.match(/.{2}/g).forEach(elm => {
-        elm = parseInt(elm, 16);
-        list.push(elm);
-    });
-    return new Uint8Array(list);
 }

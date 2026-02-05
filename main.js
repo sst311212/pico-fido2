@@ -34,131 +34,241 @@ const elm_otp_slotlist = [
     elm_otp_slot1, elm_otp_slot2, elm_otp_slot3, elm_otp_slot4
 ];
 
+// Elements for KEY panel
+const elm_fido_pin = document.querySelector("#fido_pin");
+const elm_fido_pin_retires = document.querySelector("#fido_pin_retries");
+const elm_cred_info = document.querySelector("#cred_info");
+const elm_cred_group = document.querySelector("#cred_group");
+const elm_cred_template = document.querySelector("#cred_template");
+const elm_cred_details = document.querySelector("#cred_details");
+
 // Tell connectivity status
 const elm_usb_status = document.querySelector("#web_usb_status");
 const elm_phy_status = document.querySelector("#web_phy_status");
+const elm_fido_status = document.querySelector("#web_fido_status");
 
 // Toast Elements
-const elm_phy_toast = new bootstrap.Toast(document.querySelector("#web_phy_toast"));
-
-// Intervals
-const tim_connectivity = setInterval(getConnectivity, 50);
+const elm_msg_toast1 = document.querySelector("#web_msg_toast1");
+const elm_msg_toast2 = document.querySelector("#web_msg_toast2");
 
 // Events
 const inputEvent = new Event("input");
 const changeEvent = new Event("change");
 
-function onDeviceConnect(event) {
-    if (IsPicokeyDevice(event.device)) {
-        console.log("Picokey connected", event.device);
-        new Promise(resolve => {
-            setTimeout(_ => {
-                createPicokey(event.device)
-                .then(_ => resolve())
-            }, 200);
-        })
+String.prototype.toBytes = function () {
+    data = this.split('').map(elm => elm.charCodeAt(0));
+    return new Uint8Array(data);
+};
+
+Uint8Array.prototype.toUint32 = function (byteOffset = 0, littleEndian = false) {
+    byteOffset = byteOffset < 0 ? this.length + byteOffset : byteOffset;
+    return new DataView(this.buffer).getUint32(byteOffset, littleEndian);
+};
+
+Uint8Array.prototype.toUint16 = function (byteOffset = 0, littleEndian = false) {
+    byteOffset = byteOffset < 0 ? this.length + byteOffset : byteOffset;
+    return new DataView(this.buffer).getUint16(byteOffset, littleEndian);
+};
+
+Uint8Array.fromUint32 = function (value, littleEndian = false) {
+    let data = new Uint8Array(4);
+    new DataView(data.buffer).setUint32(0, value, littleEndian);
+    return data;
+};
+
+Uint8Array.fromUint16 = function (value, littleEndian = false) {
+    let data = new Uint8Array(2);
+    new DataView(data.buffer).setUint16(0, value, littleEndian);
+    return data;
+};
+
+Uint8Array.fromBigInt = function (value, littleEndian = false) {
+    let data = BigInt(value).toString(16);
+    data = data.padStart(data.length + (data.length & 1), '0');
+    data = Uint8Array.fromHex(data);
+    return (littleEndian ? data.toReversed() : data);
+};
+
+Uint8Array.prototype.toBase64URL = function () {
+    let data = this.toBase64();
+    data = data.replaceAll('+', '-');
+    data = data.replaceAll('/', '_');
+    data = data.replaceAll('=', '');
+    return data;
+};
+
+Uint8Array.fromBase64URL = function (data) {
+    data = data.replaceAll('-', '+');
+    data = data.replaceAll('_', '/');
+    let mask = data.length & 0b11;
+    mask &&= (~mask & 0b11) + 1;
+    data = data.padEnd(data.length + mask, '=');
+    return Uint8Array.fromBase64(data);
+};
+
+function ToBytes(data, little = false, size = 4) {
+    var result;
+    if (data instanceof Array) {
+        result = new Uint8Array(data);
+    } else if (data instanceof ArrayBuffer) {
+        result = new Uint8Array(data);
+    } else if (data instanceof DataView) {
+        result = new Uint8Array(data.buffer);
+    } else if (data instanceof Uint8Array) {
+        result = data;
+    } else if (typeof(data) == "string") {
+        try {
+            result = Uint8Array.fromHex(data);
+        } catch {
+            try {
+                result = Uint8Array.fromBase64URL(data);
+            } catch {
+                result = data.toBytes();
+            }
+        }
+    } else if (typeof(data) == "bigint") {
+        result = Uint8Array.fromBigInt(data, little);
+    } else if (typeof(data) == "number") {
+        if (size <= 2 && data >=0 && data <= 65535) {
+            result = Uint8Array.fromUint16(data, little);
+        } else {
+            result = Uint8Array.fromUint32(data, little);
+        }
+    } else {
+        throw new Error("Unknown type")
     }
+    return result;
+}
+
+function arrayToHexDump(data) {
+    data = ToBytes(data);
+    let list = data.toHex().match(/.{2}/g);
+    list = list.map(elm => elm.toUpperCase());
+    return list.join(" ");
+}
+
+function hexDumpToArray(data) {
+    data = data.replaceAll(' ', '');
+    return ToBytes(data);
+}
+
+function Logger(l, msg, ...args) {
+    (logLevel & l) && console.log(msg, ...args);
+}
+
+async function DebugCoding() {
+    //await pk?.FIDO2_GetInfo();
+    //await pk?.FIDO2_GetPIN_Retries();
+    //await pk?.FIDO2.GetPINToken("????");
+    return;
+}
+
+function onDeviceConnect(event) {
+    if (!IsPicokeyDevice(event.device)) return;
+    new Promise(resolve => setTimeout(async _ => {
+        Logger(1, "Picokey Connected", event.device);
+        await createPicokey(event.device).then(_ => resolve());
+    }, 500));
 }
 
 function onDeviceDisconnect(event) {
-    if (IsPicokeyDevice(event.device)) {
-        if (pk.Equals(event.device)) {
-            pk.Dispose();
-            clearDeviceInfo();
-        }
-        console.log("Picokey disconnected", event.device);
+    if (!IsPicokeyDevice(event.device)) return;
+    if (pk?.Equals(event.device)) {
+        Logger(1, "Picokey Disconnected", event.device);
+        clearDeviceInfo();
+        pk.Dispose();
     }
 }
 
 function requestDevice(event) {
     return navigator.usb.requestDevice({
-        filters: [{
-            classCode: 255
-        }]
-    })
-    .then(async device => await createPicokey(device));
+        filters: [{ classCode: 255 }]
+    }).then(async device => {
+        await createPicokey(device);
+    });
 }
 
 function forgetDevices(event) {
     navigator.usb.getDevices()
     .then(devices => {
         devices.forEach(async dev => {
-            if (pk.Equals(dev)) {
+            if (pk?.Equals(dev)) {
                 await pk.Dispose()
                 .then(_ => dev.forget());
             }
         })
     })
-    .then(_ => location.reload());
+    .finally(_ => location.reload());
 }
 
 async function createPicokey(device) {
-    await pk.Dispose()
-    .then(_ => pk.Initialize(device))
-    .then(_ => pk.IccPowerOn())
+    await pk?.Dispose()
+    .then(_ => pk.Initialize(device));
+
+    if (debugMode) {
+        DebugCoding();
+        return;
+    }
+
+    await pk?.Rescue_GetTime()
+    .catch(_ => pk.Rescue_SetTime())
     .then(_ => showDeviceInfo());
 }
 
 async function showDeviceInfo() {
-    await pk.SelectRescue()
+    await pk?.SelectRescue()
     .then(_ => pk.Rescue_Data(true))
-    .then(json => {
-        elm_pico_platform.value = json.platform;
-        elm_pico_product.value = json.product;
-        elm_pico_version.value = json.version;
-        elm_pico_serial.value = json.serial;
-    })
-    .then(_ => pk.Rescue_SetTime());
+    .then(j => {
+        elm_pico_platform.value = j.platform;
+        elm_pico_product.value = j.product;
+        elm_pico_version.value = j.version;
+        elm_pico_serial.value = j.serial;
+    });
 }
 
-function GetPhyConfig() {
-    let config = {};
-    let vidpid = String(elm_usb_vidpid.value);
-    let gpio = parseInt(elm_led_gpio.value);
-    let btness = parseInt(elm_led_btness.value);
-    let btness_set = Boolean(elm_led_btness_set.checked);
-    let dimm = Boolean(elm_opts_dimm.checked);
-    let steady = Boolean(elm_opts_steady.checked);
-    let rainbow = Boolean(elm_opts_rainbow.checked);
-    let led_opt_set = Boolean(elm_led_options_set.checked);
-    let up_btn = parseInt(elm_btn_timeout.value);
-    let up_btn_set = Boolean(elm_btn_timeout_set.checked);
-    let product = String(elm_usb_product.value);
-    let secp256k1 = Boolean(elm_curve_secp256k1.checked);
-    let curve_set = Boolean(elm_curve_options_set.checked);
-    let driver = parseInt(elm_led_driver.value);
+function clearBoardInfo() {
+    elm_pico_infolist.forEach(elm => {
+        elm.value = "";
+    });
+}
 
-    vidpid = vidpid.replace(':', '');
-    if (vidpid.length == 8) {
-        var data = parseInt(vidpid[0], 16);
-        for (i = 1; i < vidpid.length; i++) {
-            data = (data << 4) + parseInt(vidpid[i], 16);
-        }
-        config["vidpid"] = data;
-    }
-    if (gpio >= 0 && gpio <= 29) {
-        config["led_gpio"] = gpio;
-    }
-    if (btness_set && btness >= 0 && btness <= 15) {
-        config["led_btness"] = btness;
-    }
-    if (led_opt_set) {
-        config["opts"] = { dimm, steady, rainbow };
-    }
-    if (up_btn_set && up_btn >= 0 && up_btn <= 60) {
-        config["up_btn"] = up_btn;
-    }
-    if (product) {
-        config["product"] = product;
-    }
-    if (curve_set) {
-        config["curve"] = { secp256k1 };
-    }
-    if (driver) {
-        config["driver"] = driver;
-    }
+function clearYKOtpInfo() {
+    elm_otp_slotlist.forEach(elm => {
+        elm.dataset.valid = "";
+        elm.value = "";
+    });
+}
 
-    return config;
+function clearFido2Info() {
+    elm_fido_pin_retires.textContent = "";
+    elm_fido_status.disabled = true;
+}
+
+function clearPasskeyInfo() {
+    elm_cred_group.querySelectorAll(".row").forEach(elm => {
+        if (elm.id == "cred_template") return;
+        elm.remove();
+    });
+    elm_cred_info.hidden = true;
+    elm_cred_details.hidden = true;
+}
+
+function clearDeviceInfo() {
+    if (!elm_phy_status.disabled) {
+        clearBoardInfo();
+        clearYKOtpInfo();
+    }
+    if (!elm_fido_status.disabled) {
+        clearFido2Info();
+        clearPasskeyInfo();
+    }
+}
+
+function alertMessage(msg, failed = false) {
+    const msg_type = [ elm_msg_toast1, elm_msg_toast2 ];
+    let msg_elem = msg_type[failed ? 1 : 0];
+    msg_elem.querySelector(".toast-body").textContent = msg;
+    new bootstrap.Toast(msg_elem).show();
 }
 
 // Interact Webpage faster
@@ -171,70 +281,22 @@ function getConnectivity() {
     else {
         if (!pk) {
             pk = new Picokey();
+            return;
         }
         elm_usb_status.disabled = false;
-        if (!pk.IsOpened || !pk.IsRescued) {
-            elm_phy_status.disabled = true;
+        if (!debugMode && !(pk.IsOpened && pk.IsRescued)) {
             clearDeviceInfo();
-        }
-        else {
+            elm_phy_status.disabled = true;
+            elm_fido_status.disabled = true;
+        } else {
             elm_phy_status.disabled = false;
-            pk.AutoPowerOff();
+            !debugMode && pk.AutoPowerOff();
         }
     }
 }
-
-function clearBoardInfo() {
-    elm_pico_infolist.forEach(elm => (elm.value = ""));
-}
-
-function clearYKOtpInfo() {
-    elm_otp_slotlist.forEach(elm => {
-        elm.dataset.valid = "";
-        elm.value = "";
-    });
-}
-
-function clearDeviceInfo() {
-    clearBoardInfo();
-    clearYKOtpInfo();
-}
-
-function showInputRangeValue(event) {
-    var elem = document.querySelector(`#${event.target.id}_val`);
-    if (elem) {
-        elem.textContent = event.target.value;
-    }
-}
-
-// Disable custom VID/PID input
-elm_usb_vendor.addEventListener("change", event => {
-    elm_usb_vidpid.value = event.target.value;
-    elm_usb_vidpid.disabled = !(!event.target.value);
-});
-
-elm_phy_rangelist.forEach(elm => {
-    elm.addEventListener("input", showInputRangeValue);
-});
 
 // WebUSB backend listener
 if (navigator.usb) {
     navigator.usb.addEventListener("connect", onDeviceConnect);
     navigator.usb.addEventListener('disconnect', onDeviceDisconnect);
 }
-
-setTimeout(_ => {
-    elm_usb_vendor.dispatchEvent(changeEvent);
-    elm_btn_timeout.dispatchEvent(inputEvent);
-    elm_led_btness.dispatchEvent(inputEvent);
-
-    if (navigator.usb) {
-        pk.Usable()
-        .catch(_ => {
-            navigator.usb.getDevices()
-            .then(devices => {
-                devices.forEach(async dev => await createPicokey(dev));
-            });
-        });
-    }
-}, 100);

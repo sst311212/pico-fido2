@@ -1,3 +1,4 @@
+
 label {
     user-select: none;
 }
@@ -69,5 +70,9 @@ div.dropstart > ul.dropdown-menu {
 :has(.otp-slots[id$="2"]:not([data-valid="true"])) .otp-act-2,
 :has(.otp-slots[id$="3"]:not([data-valid="true"])) .otp-act-3,
 :has(.otp-slots[id$="4"]:not([data-valid="true"])) .otp-act-4 {
+    display: none;
+}
+:has(#web_fido_status:enabled) .fido-hide,
+:has(#web_fido_status:not(:enabled)) .fido-show {
     display: none;
 }
